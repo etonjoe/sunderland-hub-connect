@@ -7,16 +7,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, Check, User, Users, FileText, MessageSquare, Activity, Bell } from 'lucide-react';
+import { AlertCircle, Check, User, Users, FileText, MessageSquare, Activity, Bell, TrendingUp, DollarSign, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import StatsCard from '@/components/admin/StatsCard';
+import AnalyticsChart from '@/components/admin/AnalyticsChart';
+import MembershipTable from '@/components/admin/MembershipTable';
+import { User as UserType, MembershipStat, ActivityStat, RevenueStat } from '@/types';
 
 // Sample data
 const ADMIN_USERS = [
-  { id: '1', name: 'Admin User', email: 'admin@example.com', role: 'admin', isPremium: true, lastLogin: '2023-05-20 10:30 AM' },
-  { id: '3', name: 'Premium User', email: 'premium@example.com', role: 'user', isPremium: true, lastLogin: '2023-05-19 3:45 PM' },
-  { id: '2', name: 'Regular User', email: 'user@example.com', role: 'user', isPremium: false, lastLogin: '2023-05-18 9:15 AM' },
-  { id: '4', name: 'Jane Smith', email: 'jane@example.com', role: 'user', isPremium: true, lastLogin: '2023-05-17 1:20 PM' },
-  { id: '5', name: 'John Doe', email: 'john@example.com', role: 'user', isPremium: false, lastLogin: '2023-05-16 11:05 AM' },
+  { id: '1', name: 'Admin User', email: 'admin@example.com', role: 'admin', isPremium: true, lastLogin: '2023-05-20 10:30 AM', createdAt: new Date('2023-01-15') },
+  { id: '3', name: 'Premium User', email: 'premium@example.com', role: 'user', isPremium: true, lastLogin: '2023-05-19 3:45 PM', createdAt: new Date('2023-02-20') },
+  { id: '2', name: 'Regular User', email: 'user@example.com', role: 'user', isPremium: false, lastLogin: '2023-05-18 9:15 AM', createdAt: new Date('2023-03-10') },
+  { id: '4', name: 'Jane Smith', email: 'jane@example.com', role: 'user', isPremium: true, lastLogin: '2023-05-17 1:20 PM', createdAt: new Date('2023-04-05') },
+  { id: '5', name: 'John Doe', email: 'john@example.com', role: 'user', isPremium: false, lastLogin: '2023-05-16 11:05 AM', createdAt: new Date('2023-05-01') },
 ];
 
 const RECENT_ACTIVITIES = [
@@ -27,9 +31,38 @@ const RECENT_ACTIVITIES = [
   { id: '5', action: 'New announcement', user: 'Admin User', timestamp: '2023-05-16 11:05 AM', details: 'Annual Family Reunion' },
 ];
 
+// Sample analytics data
+const MEMBERSHIP_STATS: MembershipStat[] = [
+  { period: 'Jan', totalUsers: 82, premiumUsers: 24, retentionRate: 94 },
+  { period: 'Feb', totalUsers: 87, premiumUsers: 27, retentionRate: 95 },
+  { period: 'Mar', totalUsers: 94, premiumUsers: 32, retentionRate: 97 },
+  { period: 'Apr', totalUsers: 103, premiumUsers: 41, retentionRate: 96 },
+  { period: 'May', totalUsers: 115, premiumUsers: 52, retentionRate: 98 },
+  { period: 'Jun', totalUsers: 124, premiumUsers: 62, retentionRate: 97 },
+];
+
+const ACTIVITY_STATS: ActivityStat[] = [
+  { period: 'Jan', forumPosts: 45, resourceUploads: 12, chatMessages: 230, activeUsers: 68 },
+  { period: 'Feb', forumPosts: 52, resourceUploads: 15, chatMessages: 245, activeUsers: 72 },
+  { period: 'Mar', forumPosts: 61, resourceUploads: 18, chatMessages: 280, activeUsers: 79 },
+  { period: 'Apr', forumPosts: 58, resourceUploads: 22, chatMessages: 310, activeUsers: 85 },
+  { period: 'May', forumPosts: 72, resourceUploads: 26, chatMessages: 350, activeUsers: 94 },
+  { period: 'Jun', forumPosts: 81, resourceUploads: 31, chatMessages: 420, activeUsers: 105 },
+];
+
+const REVENUE_STATS: RevenueStat[] = [
+  { period: 'Jan', amount: 480, subscriptions: 8, renewals: 16 },
+  { period: 'Feb', amount: 540, subscriptions: 9, renewals: 18 },
+  { period: 'Mar', amount: 660, subscriptions: 11, renewals: 21 },
+  { period: 'Apr', amount: 780, subscriptions: 13, renewals: 25 },
+  { period: 'May', amount: 960, subscriptions: 16, renewals: 30 },
+  { period: 'Jun', amount: 1140, subscriptions: 19, renewals: 35 },
+];
+
 const Admin = () => {
   const { user, isAuthenticated } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
   
   const isAdmin = user?.role === 'admin';
   
@@ -68,41 +101,12 @@ const Admin = () => {
         Admin Dashboard
       </h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">15</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Premium Members</CardTitle>
-            <Check className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">7</div>
-            <p className="text-xs text-muted-foreground">47% of members</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Resources</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">+5 from last month</p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Tabs defaultValue="users">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+      <Tabs defaultValue="dashboard">
+        <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsTrigger value="dashboard">
+            <Activity className="mr-2 h-4 w-4" />
+            Dashboard
+          </TabsTrigger>
           <TabsTrigger value="users">
             <User className="mr-2 h-4 w-4" />
             Users
@@ -120,6 +124,128 @@ const Admin = () => {
             Announcements
           </TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="dashboard">
+          <div className="space-y-8">
+            {/* Time Period Selector */}
+            <div className="flex justify-end">
+              <Tabs value={selectedPeriod} onValueChange={setSelectedPeriod} className="w-[400px]">
+                <TabsList>
+                  <TabsTrigger value="week">Week</TabsTrigger>
+                  <TabsTrigger value="month">Month</TabsTrigger>
+                  <TabsTrigger value="quarter">Quarter</TabsTrigger>
+                  <TabsTrigger value="year">Year</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatsCard 
+                title="Total Members" 
+                value="124" 
+                description="15% growth this month"
+                icon={<Users />}
+                trend={{ value: 15, isPositive: true, description: "from last period" }}
+              />
+              <StatsCard 
+                title="Premium Members" 
+                value="62" 
+                description="50% of total members"
+                icon={<Check />}
+                trend={{ value: 12, isPositive: true, description: "from last period" }}
+              />
+              <StatsCard 
+                title="Monthly Revenue" 
+                value="$1,140" 
+                description="19 subscriptions this month"
+                icon={<DollarSign />}
+                trend={{ value: 18, isPositive: true, description: "from last period" }}
+              />
+              <StatsCard 
+                title="Retention Rate" 
+                value="97%" 
+                description="3 cancellations this month"
+                icon={<Calendar />}
+                trend={{ value: 2, isPositive: true, description: "from last period" }}
+              />
+            </div>
+            
+            {/* Membership Growth Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <AnalyticsChart 
+                title="Membership Growth"
+                description="Total and premium members over time"
+                data={MEMBERSHIP_STATS}
+                type="line"
+                xAxisDataKey="period"
+                dataKeys={[
+                  { key: "totalUsers", name: "Total Members", color: "#1E88E5" },
+                  { key: "premiumUsers", name: "Premium Members", color: "#FF9800" }
+                ]}
+              />
+              
+              <StatsCard 
+                title="Active Users Today" 
+                value="87" 
+                description="70% of total members"
+                icon={<TrendingUp />}
+                trend={{ value: 5, isPositive: true, description: "from yesterday" }}
+              />
+              <StatsCard 
+                title="New Posts Today" 
+                value="14" 
+                description="23% increase from yesterday"
+                icon={<MessageSquare />}
+                trend={{ value: 23, isPositive: true, description: "from yesterday" }}
+              />
+              <StatsCard 
+                title="New Resources" 
+                value="5" 
+                description="This week"
+                icon={<FileText />}
+                trend={{ value: 40, isPositive: true, description: "from last week" }}
+              />
+            </div>
+            
+            {/* Activity and Revenue Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AnalyticsChart 
+                title="User Activity"
+                description="Forum posts, uploads and messages over time"
+                data={ACTIVITY_STATS}
+                type="bar"
+                xAxisDataKey="period"
+                dataKeys={[
+                  { key: "forumPosts", name: "Forum Posts", color: "#1E88E5" },
+                  { key: "resourceUploads", name: "Resource Uploads", color: "#43A047" },
+                  { key: "chatMessages", name: "Chat Messages", color: "#FF9800" }
+                ]}
+              />
+              
+              <AnalyticsChart 
+                title="Revenue"
+                description="Subscription revenue and renewals"
+                data={REVENUE_STATS}
+                type="line"
+                xAxisDataKey="period"
+                dataKeys={[
+                  { key: "amount", name: "Revenue ($)", color: "#43A047" },
+                  { key: "subscriptions", name: "New Subscriptions", color: "#1E88E5" },
+                  { key: "renewals", name: "Renewals", color: "#FF9800" }
+                ]}
+              />
+            </div>
+            
+            {/* Recent Members */}
+            <MembershipTable 
+              title="Recent Members"
+              description="New members in the last 30 days"
+              users={ADMIN_USERS as UserType[]}
+              onEditUser={(user) => console.log("View details for", user.name)}
+            />
+          </div>
+        </TabsContent>
         
         <TabsContent value="users">
           <Card>

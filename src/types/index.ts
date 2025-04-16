@@ -99,3 +99,26 @@ export interface Subscription {
   status: 'active' | 'expired' | 'canceled';
   amount: number;
 }
+
+// New interfaces for analytics
+export interface MembershipStat {
+  period: string;
+  totalUsers: number;
+  premiumUsers: number;
+  retentionRate: number;
+}
+
+export interface ActivityStat {
+  period: string;
+  forumPosts: number;
+  resourceUploads: number;
+  chatMessages: number;
+  activeUsers: number;
+}
+
+export interface RevenueStat {
+  period: string;
+  amount: number;
+  subscriptions: number;
+  renewals: number;
+}
