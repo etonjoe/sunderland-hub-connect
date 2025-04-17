@@ -2,40 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { toast } from 'sonner';
-
-// Mock user data
-const mockUsers = [
-  {
-    id: '1',
-    email: 'admin@example.com',
-    password: 'admin123',
-    name: 'Admin User',
-    avatar: '',
-    role: 'admin' as const,
-    isPremium: true,
-    createdAt: new Date()
-  },
-  {
-    id: '2',
-    email: 'user@example.com',
-    password: 'user123',
-    name: 'Regular User',
-    avatar: '',
-    role: 'user' as const,
-    isPremium: false,
-    createdAt: new Date()
-  },
-  {
-    id: '3',
-    email: 'premium@example.com',
-    password: 'premium123',
-    name: 'Premium User',
-    avatar: '',
-    role: 'user' as const,
-    isPremium: true,
-    createdAt: new Date()
-  }
-];
+import { supabase, mapSupabaseUser } from '@/lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -63,36 +30,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for saved user in localStorage
-    const savedUser = localStorage.getItem('sunderlandHubUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const mappedUser = mapSupabaseUser(session.user);
+        setUser(mappedUser);
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const mappedUser = mapSupabaseUser(session.user);
+        setUser(mappedUser);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      const foundUser = mockUsers.find(
-        u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
-      
-      if (!foundUser) {
-        toast.error('Invalid email or password');
+      if (error) {
+        toast.error(error.message);
         return false;
       }
-      
-      // Remove password from user object before storing
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      
-      // Save to localStorage
-      localStorage.setItem('sunderlandHubUser', JSON.stringify(userWithoutPassword));
       
       toast.success('Logged in successfully');
       return true;
@@ -105,45 +79,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('sunderlandHubUser');
-    toast.success('Logged out successfully');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success('Logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('An error occurred during logout');
+    }
   };
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
     setIsLoading(true);
-    
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role: 'user',
+            isPremium: false
+          }
+        }
+      });
       
-      // Check if user already exists
-      const existingUser = mockUsers.find(
-        u => u.email.toLowerCase() === email.toLowerCase()
-      );
-      
-      if (existingUser) {
-        toast.error('Email is already registered');
+      if (error) {
+        toast.error(error.message);
         return false;
       }
       
-      // Create new user
-      const newUser = {
-        id: `user_${Date.now()}`,
-        email,
-        name,
-        role: 'user' as const,
-        isPremium: false,
-        createdAt: new Date()
-      };
-      
-      setUser(newUser);
-      
-      // Save to localStorage
-      localStorage.setItem('sunderlandHubUser', JSON.stringify(newUser));
-      
-      toast.success('Registration successful');
+      toast.success('Registration successful. Please check your email for verification.');
       return true;
     } catch (error) {
       console.error('Registration error:', error);
@@ -158,15 +124,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return false;
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      
-      // Update localStorage
-      localStorage.setItem('sunderlandHubUser', JSON.stringify(updatedUser));
-      
+      const { error } = await supabase.auth.updateUser({
+        data: userData
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return false;
+      }
+
       toast.success('Profile updated successfully');
       return true;
     } catch (error) {
@@ -180,15 +146,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return false;
     
     try {
-      // Simulate payment processing and account upgrade
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const upgradedUser = { ...user, isPremium: true };
-      setUser(upgradedUser);
-      
-      // Update localStorage
-      localStorage.setItem('sunderlandHubUser', JSON.stringify(upgradedUser));
-      
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          isPremium: true
+        }
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return false;
+      }
+
       toast.success('Account upgraded to premium successfully');
       return true;
     } catch (error) {
