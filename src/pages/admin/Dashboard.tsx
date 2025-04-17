@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Activity, Users, Calendar, DollarSign, MessageSquare, FileText, TrendingUp } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatsCard from '@/components/admin/StatsCard';
 import AnalyticsChart from '@/components/admin/AnalyticsChart';
 import MembershipTable from '@/components/admin/MembershipTable';
-import { UserType, MembershipStat, ActivityStat, RevenueStat } from '@/types';
+import { UserType, MembershipStat, ActivityStat, RevenueStat } from '@/types/admin';
 
 // Sample analytics data
 const MEMBERSHIP_STATS: MembershipStat[] = [

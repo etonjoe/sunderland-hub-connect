@@ -1,6 +1,8 @@
 
 import { User, MembershipStat, ActivityStat, RevenueStat } from './index';
 
-export type { User as UserType, MembershipStat, ActivityStat, RevenueStat };
+// Export User as UserType and also re-export the other types
+export type UserType = User;
+export { MembershipStat, ActivityStat, RevenueStat };
 
 // Add any admin-specific types here in the future
