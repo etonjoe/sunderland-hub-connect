@@ -4,8 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -20,23 +20,87 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Protected route component
+const ProtectedRoute = ({ children, requiredRole = null }) => {
+  const { user, isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // For admin routes, check if user is admin
+  if (requiredRole === 'admin' && user?.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
+};
+
+const AppRoutes = () => {
+  const { user, isAuthenticated, logout } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar 
+        isAuthenticated={isAuthenticated}
+        isAdmin={isAdmin}
+        isPremium={user?.isPremium}
+        onLogin={() => {}}
+        onLogout={logout}
+      />
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="/forum" element={<Forum />} />
+          <Route 
+            path="/resources" 
+            element={
+              <ProtectedRoute>
+                <Resources />
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path="/chat" 
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/announcements" element={<Announcements />} />
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <Admin />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <footer className="bg-muted py-6 mt-12">
+        <div className="container text-center text-muted-foreground">
+          <p>© 2023 SunderlandFamily Hub. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
 const App = () => {
-  // These state values would be managed by the actual auth system in a real app
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
-  
-  // Handlers for login/logout that would be replaced with actual auth logic
-  const handleLogin = () => {
-    // This is just a placeholder for the Navbar component
-    // The actual login is handled in the Login page with useAuth
-  };
-  
-  const handleLogout = () => {
-    // This is just a placeholder for the Navbar component
-    // The actual logout is handled in the Navbar with useAuth
-  };
-  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -44,34 +108,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <div className="min-h-screen flex flex-col">
-              <Navbar 
-                isAuthenticated={isAuthenticated}
-                isAdmin={isAdmin}
-                isPremium={isPremium}
-                onLogin={handleLogin}
-                onLogout={handleLogout}
-              />
-              <main className="flex-1">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/forum" element={<Forum />} />
-                  <Route path="/resources" element={<Resources />} />
-                  <Route path="/chat" element={<Chat />} />
-                  <Route path="/announcements" element={<Announcements />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
-              <footer className="bg-muted py-6 mt-12">
-                <div className="container text-center text-muted-foreground">
-                  <p>© 2023 SunderlandFamily Hub. All rights reserved.</p>
-                </div>
-              </footer>
-            </div>
+            <AppRoutes />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

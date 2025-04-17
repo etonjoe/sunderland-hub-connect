@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Bell, Menu, MessageSquare, Users, FileText, Home, LogIn, LogOut } from 'lucide-react';
+import { Bell, Menu, MessageSquare, Users, FileText, Home, LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavbarProps {
   isAuthenticated: boolean;
@@ -27,6 +28,7 @@ const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
 
   const handleClose = () => setOpen(false);
 
@@ -41,9 +43,11 @@ const Navbar: React.FC<NavbarProps> = ({
     }
 
     return (
-      <Button className="bg-family-orange hover:bg-orange-600" onClick={onLogin}>
-        <LogIn className="mr-2 h-4 w-4" />
-        <span>Sign In</span>
+      <Button className="bg-family-orange hover:bg-orange-600" asChild>
+        <Link to="/login">
+          <LogIn className="mr-2 h-4 w-4" />
+          <span>Sign In</span>
+        </Link>
       </Button>
     );
   };
@@ -149,7 +153,10 @@ const Navbar: React.FC<NavbarProps> = ({
                           asChild
                           onClick={handleClose}
                         >
-                          <Link to="/profile">Profile</Link>
+                          <Link to="/profile">
+                            <UserIcon className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                          </Link>
                         </Button>
                         <Button
                           variant="ghost"
@@ -167,12 +174,14 @@ const Navbar: React.FC<NavbarProps> = ({
                       <Button
                         className="w-full bg-family-orange hover:bg-orange-600"
                         onClick={() => {
-                          onLogin();
                           handleClose();
                         }}
+                        asChild
                       >
-                        <LogIn className="mr-2 h-4 w-4" />
-                        <span>Sign In</span>
+                        <Link to="/login">
+                          <LogIn className="mr-2 h-4 w-4" />
+                          <span>Sign In</span>
+                        </Link>
                       </Button>
                     )}
                   </div>
@@ -185,7 +194,10 @@ const Navbar: React.FC<NavbarProps> = ({
             {renderLinks()}
             {isAuthenticated && (
               <Button variant="ghost" className="text-white" asChild>
-                <Link to="/profile">Profile</Link>
+                <Link to="/profile">
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
               </Button>
             )}
             {renderAuthButtons()}
