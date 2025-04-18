@@ -190,6 +190,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar: string | null
+          bio: string | null
           created_at: string | null
           id: string
           is_premium: boolean
@@ -198,6 +199,7 @@ export type Database = {
         }
         Insert: {
           avatar?: string | null
+          bio?: string | null
           created_at?: string | null
           id: string
           is_premium?: boolean
@@ -206,6 +208,7 @@ export type Database = {
         }
         Update: {
           avatar?: string | null
+          bio?: string | null
           created_at?: string | null
           id?: string
           is_premium?: boolean
