@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,8 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    adminCode: ''
   });
   
   const [errors, setErrors] = useState<{
@@ -25,6 +25,7 @@ const Register = () => {
     email?: string;
     password?: string;
     confirmPassword?: string;
+    adminCode?: string;
   }>({});
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,6 +61,10 @@ const Register = () => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
     
+    if (formData.adminCode && formData.adminCode !== 'SUNDERLAND2024') {
+      newErrors.adminCode = 'Invalid admin invitation code';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -71,7 +76,15 @@ const Register = () => {
       return;
     }
     
-    const success = await register(formData.email, formData.password, formData.name);
+    const role = formData.adminCode === 'SUNDERLAND2024' ? 'admin' : 'user';
+    
+    const success = await register(
+      formData.email, 
+      formData.password, 
+      formData.name, 
+      role
+    );
+    
     if (success) {
       navigate('/');
     }
@@ -165,6 +178,18 @@ const Register = () => {
                 onChange={handleChange}
               />
               {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="adminCode">Admin Invitation Code (Optional)</Label>
+              <Input
+                id="adminCode"
+                name="adminCode"
+                placeholder="Enter admin code if applicable"
+                value={formData.adminCode}
+                onChange={handleChange}
+              />
+              {errors.adminCode && <p className="text-red-500 text-sm">{errors.adminCode}</p>}
             </div>
             
             <Button 

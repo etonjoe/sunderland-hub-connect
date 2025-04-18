@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { toast } from 'sonner';
@@ -10,7 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (email: string, password: string, name: string) => Promise<boolean>;
+  register: (email: string, password: string, name: string, role?: 'user' | 'admin') => Promise<boolean>;
   updateProfile: (user: Partial<User>) => Promise<boolean>;
   upgradeAccount: () => Promise<boolean>;
   supabaseConfigured: boolean;
@@ -108,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, name: string): Promise<boolean> => {
+  const register = async (email: string, password: string, name: string, role: 'user' | 'admin' = 'user'): Promise<boolean> => {
     if (!supabaseConfigured) {
       toast.error('Authentication is not available. Supabase configuration is missing.');
       return false;
@@ -122,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             name,
-            role: 'user',
+            role,
             isPremium: false
           }
         }
