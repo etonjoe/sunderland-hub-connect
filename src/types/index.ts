@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   email: string;
@@ -105,7 +106,7 @@ export interface MembershipStat {
   total_users: number;
   premium_users: number;
   retention_rate: number;
-  created_at?: Date;
+  created_at?: string;
 }
 
 export interface ActivityStat {
@@ -115,7 +116,7 @@ export interface ActivityStat {
   resource_uploads: number;
   chat_messages: number;
   active_users: number;
-  created_at?: Date;
+  created_at?: string;
 }
 
 export interface RevenueStat {
@@ -124,5 +125,5 @@ export interface RevenueStat {
   amount: number;
   subscriptions: number;
   renewals: number;
-  created_at?: Date;
+  created_at?: string;
 }

@@ -7,7 +7,7 @@ import AnalyticsChart from '@/components/admin/AnalyticsChart';
 import MembershipTable from '@/components/admin/MembershipTable';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserType, MembershipStat, ActivityStat, RevenueStat } from '@/types';
+import { UserType, MembershipStat, ActivityStat, RevenueStat } from '@/types/admin';
 import { toast } from 'sonner';
 
 interface DashboardProps {
