@@ -9,7 +9,187 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      announcements: {
+        Row: {
+          author_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          is_pinned: boolean
+          title: string
+        }
+        Insert: {
+          author_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean
+          title: string
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_pinned?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
+      forum_categories: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      forum_comments: {
+        Row: {
+          author_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          post_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          post_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          post_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "forum_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_posts: {
+        Row: {
+          author_id: string | null
+          category_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          category_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          category_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "forum_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar: string | null
+          created_at: string | null
+          id: string
+          is_premium: boolean
+          name: string
+          role: string
+        }
+        Insert: {
+          avatar?: string | null
+          created_at?: string | null
+          id: string
+          is_premium?: boolean
+          name: string
+          role?: string
+        }
+        Update: {
+          avatar?: string | null
+          created_at?: string | null
+          id?: string
+          is_premium?: boolean
+          name?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      resources: {
+        Row: {
+          author_id: string | null
+          created_at: string | null
+          description: string
+          file_type: string
+          file_url: string
+          id: string
+          is_premium: boolean
+          title: string
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string | null
+          description: string
+          file_type: string
+          file_url: string
+          id?: string
+          is_premium?: boolean
+          title: string
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string | null
+          description?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          is_premium?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,9 +1,7 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { User } from '@/types';
 import { toast } from 'sonner';
 
-// Use the values from the automated Supabase integration
 const supabaseUrl = 'https://gpbwlvooyvqsjuytykgo.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwYndsdm9veXZxc2p1eXR5a2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5MzMwOTUsImV4cCI6MjA2MDUwOTA5NX0.aMhpjRQHqQ79YaKPXWFgxrxKOrogje8i35jL6mf01OQ';
 
@@ -28,6 +26,5 @@ export const mapSupabaseUser = (supabaseUser: any): User => ({
 
 // Helper function to check if supabase is properly configured
 export const isSupabaseConfigured = (): boolean => {
-  return supabaseUrl !== 'https://your-supabase-project.supabase.co' && 
-         supabaseAnonKey !== 'your-supabase-anon-key';
+  return supabaseUrl.length > 0 && supabaseAnonKey.length > 0;
 };
