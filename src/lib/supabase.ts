@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { User } from '@/types';
 import { toast } from 'sonner';
@@ -27,4 +28,21 @@ export const mapSupabaseUser = (supabaseUser: any): User => ({
 // Helper function to check if supabase is properly configured
 export const isSupabaseConfigured = (): boolean => {
   return supabaseUrl.length > 0 && supabaseAnonKey.length > 0;
+};
+
+// Test connection function
+export const testSupabaseConnection = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+    
+    if (error) {
+      console.error('Supabase connection test failed:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('Exception during Supabase connection test:', err);
+    return false;
+  }
 };
