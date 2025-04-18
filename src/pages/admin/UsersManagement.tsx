@@ -1,10 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UsersManagementProps {
   users: any[];
@@ -13,6 +16,37 @@ interface UsersManagementProps {
 }
 
 const UsersManagement = ({ users, searchTerm, onSearchChange }: UsersManagementProps) => {
+  const { user: currentUser } = useAuth();
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+  const handleRoleUpdate = async (userId: string, currentRole: string) => {
+    if (!currentUser || userId === currentUser.id) {
+      toast.error("You cannot change your own role");
+      return;
+    }
+
+    setIsUpdating(userId);
+    try {
+      const newRole = currentRole === 'admin' ? 'user' : 'admin';
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (error) throw error;
+      
+      toast.success(`User role updated to ${newRole}`);
+      // Refresh the page to show updated data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast.error('Failed to update user role');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -58,12 +92,14 @@ const UsersManagement = ({ users, searchTerm, onSearchChange }: UsersManagementP
                 <TableCell>{user.lastLogin}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">Edit</Button>
-                    {user.id !== '1' && ( // Don't show delete for admin
-                      <Button variant="outline" size="sm" className="text-destructive">
-                        Delete
-                      </Button>
-                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleRoleUpdate(user.id, user.role)}
+                      disabled={isUpdating === user.id || user.id === currentUser?.id}
+                    >
+                      {isUpdating === user.id ? 'Updating...' : `Make ${user.role === 'admin' ? 'Member' : 'Admin'}`}
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
