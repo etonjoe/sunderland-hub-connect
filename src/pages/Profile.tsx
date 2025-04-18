@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CreditCard, User, Shield, AlertCircle } from 'lucide-react';
+import PaymentMethods from '@/components/PaymentMethods';
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading, updateProfile, upgradeAccount } = useAuth();
@@ -141,9 +141,10 @@ const Profile = () => {
         
         <div className="md:col-span-2">
           <Tabs defaultValue="personal">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="personal">Personal Info</TabsTrigger>
               <TabsTrigger value="subscription">Subscription</TabsTrigger>
+              <TabsTrigger value="payment">Payment Methods</TabsTrigger>
             </TabsList>
             
             <TabsContent value="personal" className="mt-6">
@@ -295,6 +296,20 @@ const Profile = () => {
                       </Button>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="payment" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Payment Methods</CardTitle>
+                  <CardDescription>
+                    Manage your saved payment methods
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PaymentMethods />
                 </CardContent>
               </Card>
             </TabsContent>
