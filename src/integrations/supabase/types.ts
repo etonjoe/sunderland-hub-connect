@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activity_stats: {
+        Row: {
+          active_users: number
+          chat_messages: number
+          created_at: string | null
+          forum_posts: number
+          id: string
+          period: string
+          resource_uploads: number
+        }
+        Insert: {
+          active_users?: number
+          chat_messages?: number
+          created_at?: string | null
+          forum_posts?: number
+          id?: string
+          period: string
+          resource_uploads?: number
+        }
+        Update: {
+          active_users?: number
+          chat_messages?: number
+          created_at?: string | null
+          forum_posts?: number
+          id?: string
+          period?: string
+          resource_uploads?: number
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           author_id: string | null
@@ -130,6 +160,33 @@ export type Database = {
           },
         ]
       }
+      membership_stats: {
+        Row: {
+          created_at: string | null
+          id: string
+          period: string
+          premium_users: number
+          retention_rate: number
+          total_users: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          period: string
+          premium_users?: number
+          retention_rate?: number
+          total_users?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          period?: string
+          premium_users?: number
+          retention_rate?: number
+          total_users?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar: string | null
@@ -187,6 +244,33 @@ export type Database = {
           id?: string
           is_premium?: boolean
           title?: string
+        }
+        Relationships: []
+      }
+      revenue_stats: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          period: string
+          renewals: number
+          subscriptions: number
+        }
+        Insert: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          period: string
+          renewals?: number
+          subscriptions?: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          period?: string
+          renewals?: number
+          subscriptions?: number
         }
         Relationships: []
       }

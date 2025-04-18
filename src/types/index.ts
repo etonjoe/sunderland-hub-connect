@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   email: string;
@@ -100,25 +99,30 @@ export interface Subscription {
   amount: number;
 }
 
-// New interfaces for analytics
 export interface MembershipStat {
+  id: string;
   period: string;
-  totalUsers: number;
-  premiumUsers: number;
-  retentionRate: number;
+  total_users: number;
+  premium_users: number;
+  retention_rate: number;
+  created_at?: Date;
 }
 
 export interface ActivityStat {
+  id: string;
   period: string;
-  forumPosts: number;
-  resourceUploads: number;
-  chatMessages: number;
-  activeUsers: number;
+  forum_posts: number;
+  resource_uploads: number;
+  chat_messages: number;
+  active_users: number;
+  created_at?: Date;
 }
 
 export interface RevenueStat {
+  id: string;
   period: string;
   amount: number;
   subscriptions: number;
   renewals: number;
+  created_at?: Date;
 }
