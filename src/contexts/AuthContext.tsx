@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { toast } from 'sonner';
-import { supabase, mapSupabaseUser } from '@/lib/supabase';
+import { supabase, mapSupabaseUser, isSupabaseConfigured } from '@/lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +13,7 @@ interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<boolean>;
   updateProfile: (user: Partial<User>) => Promise<boolean>;
   upgradeAccount: () => Promise<boolean>;
+  supabaseConfigured: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,8 +29,16 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const supabaseConfigured = isSupabaseConfigured();
+  
   useEffect(() => {
+    if (!supabaseConfigured) {
+      console.warn('Supabase is not configured correctly. Authentication features will not work.');
+      toast.error('Authentication is not available. Supabase configuration is missing.');
+      setIsLoading(false);
+      return;
+    }
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
@@ -53,9 +62,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabaseConfigured]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    if (!supabaseConfigured) {
+      toast.error('Authentication is not available. Supabase configuration is missing.');
+      return false;
+    }
+    
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -80,6 +94,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    if (!supabaseConfigured) {
+      toast.error('Authentication is not available. Supabase configuration is missing.');
+      return;
+    }
+
     try {
       await supabase.auth.signOut();
       toast.success('Logged out successfully');
@@ -90,6 +109,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
+    if (!supabaseConfigured) {
+      toast.error('Authentication is not available. Supabase configuration is missing.');
+      return false;
+    }
+
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
@@ -121,6 +145,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
+    if (!supabaseConfigured) {
+      toast.error('Authentication is not available. Supabase configuration is missing.');
+      return false;
+    }
+
     if (!user) return false;
     
     try {
@@ -143,6 +172,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const upgradeAccount = async (): Promise<boolean> => {
+    if (!supabaseConfigured) {
+      toast.error('Authentication is not available. Supabase configuration is missing.');
+      return false;
+    }
+
     if (!user) return false;
     
     try {
@@ -176,7 +210,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         register,
         updateProfile,
-        upgradeAccount
+        upgradeAccount,
+        supabaseConfigured
       }}
     >
       {children}

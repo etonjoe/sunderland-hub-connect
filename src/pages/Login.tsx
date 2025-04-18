@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, supabaseConfigured } = useAuth();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -44,6 +46,16 @@ const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {!supabaseConfigured && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Configuration Error</AlertTitle>
+              <AlertDescription>
+                Supabase is not configured correctly. Authentication features won't work until this is fixed. Please check your Supabase connection in the project settings.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -55,6 +67,7 @@ const Login = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
+                disabled={!supabaseConfigured}
               />
             </div>
             <div className="space-y-2">
@@ -71,30 +84,33 @@ const Login = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
+                disabled={!supabaseConfigured}
               />
             </div>
             <Button 
               type="submit" 
               className="w-full bg-family-blue hover:bg-blue-600"
-              disabled={isLoading}
+              disabled={isLoading || !supabaseConfigured}
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
           
-          <div className="mt-6">
-            <p className="text-center text-sm text-muted-foreground">
-              <span className="mr-1">Demo Accounts:</span> 
-              <code className="bg-muted p-1 rounded">admin@example.com / admin123</code>, 
-              <code className="bg-muted ml-1 p-1 rounded">user@example.com / user123</code>, 
-              <code className="bg-muted ml-1 p-1 rounded">premium@example.com / premium123</code>
-            </p>
-          </div>
+          {supabaseConfigured && (
+            <div className="mt-6">
+              <p className="text-center text-sm text-muted-foreground">
+                <span className="mr-1">Demo Accounts:</span> 
+                <code className="bg-muted p-1 rounded">admin@example.com / admin123</code>, 
+                <code className="bg-muted ml-1 p-1 rounded">user@example.com / user123</code>, 
+                <code className="bg-muted ml-1 p-1 rounded">premium@example.com / premium123</code>
+              </p>
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           <p className="text-center text-sm text-muted-foreground w-full">
             Don't have an account?{" "}
-            <Link to="/register" className="text-family-blue hover:underline">
+            <Link to="/register" className={`${supabaseConfigured ? 'text-family-blue hover:underline' : 'text-muted-foreground cursor-not-allowed'}`}>
               Sign up
             </Link>
           </p>

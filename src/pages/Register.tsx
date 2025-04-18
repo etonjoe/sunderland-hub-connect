@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register, isLoading } = useAuth();
+  const { register, isLoading, supabaseConfigured } = useAuth();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -74,6 +76,32 @@ const Register = () => {
       navigate('/');
     }
   };
+  
+  if (!supabaseConfigured) {
+    return (
+      <div className="container max-w-md mx-auto py-10">
+        <Card className="animate-fade-in">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Configuration Error</AlertTitle>
+              <AlertDescription>
+                Supabase is not configured correctly. Registration is not available until this is fixed. Please check your Supabase connection in the project settings.
+              </AlertDescription>
+            </Alert>
+            <div className="text-center mt-4">
+              <Link to="/">
+                <Button variant="outline">Return to Home</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   return (
     <div className="container max-w-md mx-auto py-10">
