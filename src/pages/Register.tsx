@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -77,16 +78,15 @@ const Register = () => {
     }
     
     const role = formData.adminCode === 'SUNDERLAND2024' ? 'admin' : 'user';
-    const metadata = {
-      name: formData.name,
-      role,
-      isPremium: false
-    };
     
     const success = await register(
       formData.email, 
       formData.password,
-      metadata
+      {
+        name: formData.name,
+        role,
+        isPremium: false
+      }
     );
     
     if (success) {

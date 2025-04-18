@@ -9,7 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (email: string, password: string, name: string, role?: 'user' | 'admin') => Promise<boolean>;
+  register: (email: string, password: string, metadata: any) => Promise<boolean>;
   updateProfile: (user: Partial<User>) => Promise<boolean>;
   upgradeAccount: () => Promise<boolean>;
   supabaseConfigured: boolean;
@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, name: string, role: 'user' | 'admin' = 'user'): Promise<boolean> => {
+  const register = async (email: string, password: string, metadata: any): Promise<boolean> => {
     if (!supabaseConfigured) {
       toast.error('Authentication is not available. Supabase configuration is missing.');
       return false;
@@ -119,11 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
         options: {
-          data: {
-            name,
-            role,
-            isPremium: false
-          }
+          data: metadata
         }
       });
       
