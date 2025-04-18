@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login, isLoading, supabaseConfigured } = useAuth();
+  const [error, setError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -21,18 +23,46 @@ const Login = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (error) setError(null);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!formData.email || !formData.password) {
+      setError("Email and password are required");
       return;
     }
     
-    const success = await login(formData.email, formData.password);
-    if (success) {
-      navigate('/');
+    try {
+      const success = await login(formData.email, formData.password);
+      if (success) {
+        navigate('/');
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An unexpected error occurred during login.");
+    }
+  };
+
+  const fillDemoCredentials = (type: 'admin' | 'user' | 'premium') => {
+    if (type === 'admin') {
+      setFormData({
+        email: 'admin@example.com',
+        password: 'admin123'
+      });
+    } else if (type === 'user') {
+      setFormData({
+        email: 'user@example.com',
+        password: 'user123'
+      });
+    } else if (type === 'premium') {
+      setFormData({
+        email: 'premium@example.com',
+        password: 'premium123'
+      });
     }
   };
   
@@ -53,6 +83,14 @@ const Login = () => {
               <AlertDescription>
                 Supabase is not configured correctly. Authentication features won't work until this is fixed. Please check your Supabase connection in the project settings.
               </AlertDescription>
+            </Alert>
+          )}
+
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Login Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
@@ -98,12 +136,35 @@ const Login = () => {
           
           {supabaseConfigured && (
             <div className="mt-6">
-              <p className="text-center text-sm text-muted-foreground">
-                <span className="mr-1">Demo Accounts:</span> 
-                <code className="bg-muted p-1 rounded">admin@example.com / admin123</code>, 
-                <code className="bg-muted ml-1 p-1 rounded">user@example.com / user123</code>, 
-                <code className="bg-muted ml-1 p-1 rounded">premium@example.com / premium123</code>
+              <p className="text-center text-sm text-muted-foreground mb-2">
+                <span className="mr-1">Demo Accounts:</span>
               </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => fillDemoCredentials('admin')}
+                >
+                  Admin
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => fillDemoCredentials('user')}
+                >
+                  Regular User
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => fillDemoCredentials('premium')}
+                >
+                  Premium User
+                </Button>
+              </div>
+              <div className="mt-2 text-xs text-center text-muted-foreground">
+                <p>Click buttons above to fill credentials automatically.</p>
+              </div>
             </div>
           )}
         </CardContent>
