@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,7 @@ import Chat from "./pages/Chat";
 import Announcements from "./pages/Announcements";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import ConfirmationSuccess from "./pages/ConfirmationSuccess";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +88,7 @@ const AppRoutes = () => {
               </ProtectedRoute>
             } 
           />
+          <Route path="/auth/confirm" element={<ConfirmationSuccess />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
