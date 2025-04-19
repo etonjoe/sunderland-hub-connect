@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -44,25 +43,6 @@ const Login = () => {
     } catch (err) {
       console.error("Login error:", err);
       setError("An unexpected error occurred during login.");
-    }
-  };
-
-  const fillDemoCredentials = (type: 'admin' | 'user' | 'premium') => {
-    if (type === 'admin') {
-      setFormData({
-        email: 'admin@example.com',
-        password: 'admin123'
-      });
-    } else if (type === 'user') {
-      setFormData({
-        email: 'user@example.com',
-        password: 'user123'
-      });
-    } else if (type === 'premium') {
-      setFormData({
-        email: 'premium@example.com',
-        password: 'premium123'
-      });
     }
   };
   
@@ -133,40 +113,6 @@ const Login = () => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-          
-          {supabaseConfigured && (
-            <div className="mt-6">
-              <p className="text-center text-sm text-muted-foreground mb-2">
-                <span className="mr-1">Demo Accounts:</span>
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => fillDemoCredentials('admin')}
-                >
-                  Admin
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => fillDemoCredentials('user')}
-                >
-                  Regular User
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => fillDemoCredentials('premium')}
-                >
-                  Premium User
-                </Button>
-              </div>
-              <div className="mt-2 text-xs text-center text-muted-foreground">
-                <p>Click buttons above to fill credentials automatically.</p>
-              </div>
-            </div>
-          )}
         </CardContent>
         <CardFooter>
           <p className="text-center text-sm text-muted-foreground w-full">
