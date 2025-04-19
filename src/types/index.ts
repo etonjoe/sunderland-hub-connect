@@ -1,9 +1,10 @@
+
 export interface User {
   id: string;
   email: string;
   name: string;
   avatar?: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'moderator';
   isPremium: boolean;
   createdAt: Date;
   bio?: string;

@@ -28,7 +28,6 @@ const Admin = () => {
   
   const isAdmin = user?.role === 'admin';
   
-  // Create a fetchUsers function that we can call both on initial load and after user creation
   const fetchUsers = async () => {
     setIsLoading(true);
     setHasError(false);
@@ -45,12 +44,11 @@ const Admin = () => {
       } else {
         const userList = (data || []).map(profile => ({
           id: profile.id,
-          email: profile.name, // Note: This is a placeholder. You'll need to get emails from auth.users
+          email: profile.name,
           name: profile.name,
-          role: (profile.role === 'admin' ? 'admin' : 'user') as 'admin' | 'user', // Cast to the specific union type
+          role: profile.role as 'admin' | 'user' | 'moderator',
           isPremium: profile.is_premium,
           lastLogin: 'Not available',
-          // Add the required createdAt field from the database or default to current date
           createdAt: profile.created_at ? new Date(profile.created_at) : new Date()
         }));
         setUsers(userList);
@@ -75,7 +73,6 @@ const Admin = () => {
   );
   
   const handleUserAdded = () => {
-    // Call fetchUsers to refresh the users list after adding a new user
     fetchUsers();
   };
   
@@ -179,7 +176,6 @@ const Admin = () => {
             </TabsContent>
 
             <TabsContent value="teams">
-              {/* TODO: Add Teams Management Component */}
               <div className="text-center py-12 text-muted-foreground">
                 Teams management coming soon
               </div>

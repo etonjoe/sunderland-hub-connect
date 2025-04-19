@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +7,7 @@ import PaymentMethods from '@/components/PaymentMethods';
 import AccountOverview from '@/components/profile/AccountOverview';
 import PersonalInfoForm from '@/components/profile/PersonalInfoForm';
 import SubscriptionDetails from '@/components/profile/SubscriptionDetails';
+import NotificationPreferences from '@/components/profile/NotificationPreferences';
 import { toast } from 'sonner';
 
 const Profile = () => {
@@ -121,10 +121,11 @@ const Profile = () => {
         
         <div className="md:col-span-2">
           <Tabs defaultValue="personal">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="personal">Personal Info</TabsTrigger>
               <TabsTrigger value="subscription">Subscription</TabsTrigger>
               <TabsTrigger value="payment">Payment Methods</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
             
             <TabsContent value="personal" className="mt-6">
@@ -146,6 +147,10 @@ const Profile = () => {
             
             <TabsContent value="payment" className="mt-6">
               <PaymentMethods />
+            </TabsContent>
+            
+            <TabsContent value="notifications" className="mt-6">
+              <NotificationPreferences />
             </TabsContent>
           </Tabs>
         </div>

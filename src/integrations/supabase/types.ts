@@ -306,6 +306,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_announcements: boolean | null
+          email_forum: boolean | null
+          email_messages: boolean | null
+          id: string
+          in_app_announcements: boolean | null
+          in_app_forum: boolean | null
+          in_app_messages: boolean | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_announcements?: boolean | null
+          email_forum?: boolean | null
+          email_messages?: boolean | null
+          id?: string
+          in_app_announcements?: boolean | null
+          in_app_forum?: boolean | null
+          in_app_messages?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_announcements?: boolean | null
+          email_forum?: boolean | null
+          email_messages?: boolean | null
+          id?: string
+          in_app_announcements?: boolean | null
+          in_app_forum?: boolean | null
+          in_app_messages?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payment_methods: {
         Row: {
           card_brand: string | null
@@ -496,7 +535,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user" | "moderator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -611,6 +650,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user", "moderator"],
+    },
   },
 } as const
