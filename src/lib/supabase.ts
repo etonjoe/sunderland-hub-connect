@@ -6,12 +6,13 @@ import { toast } from 'sonner';
 const supabaseUrl = 'https://gpbwlvooyvqsjuytykgo.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwYndsdm9veXZxc2p1eXR5a2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5MzMwOTUsImV4cCI6MjA2MDUwOTA5NX0.aMhpjRQHqQ79YaKPXWFgxrxKOrogje8i35jL6mf01OQ';
 
-// Create supabase client with explicit storage configuration
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    storage: localStorage
+    storage: localStorage,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
 });
 
