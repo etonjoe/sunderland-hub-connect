@@ -8,6 +8,7 @@ import PaymentMethods from '@/components/PaymentMethods';
 import AccountOverview from '@/components/profile/AccountOverview';
 import PersonalInfoForm from '@/components/profile/PersonalInfoForm';
 import SubscriptionDetails from '@/components/profile/SubscriptionDetails';
+import { toast } from 'sonner';
 
 const Profile = () => {
   const { user, isAuthenticated, isLoading, updateProfile, upgradeAccount } = useAuth();
@@ -16,7 +17,14 @@ const Profile = () => {
     name: '',
     email: '',
     bio: '',
-    location: ''
+    location: '',
+    mobileNumber: '',
+    whatsappNumber: '',
+    jobRole: '',
+    education: '',
+    religion: '',
+    address: '',
+    city: ''
   });
   
   const [isUpdating, setIsUpdating] = useState(false);
@@ -27,8 +35,15 @@ const Profile = () => {
       setProfileData({
         name: user.name,
         email: user.email,
-        bio: user.bio,
-        location: user.location
+        bio: user.bio || '',
+        location: user.location || '',
+        mobileNumber: user.mobileNumber || '',
+        whatsappNumber: user.whatsappNumber || '',
+        jobRole: user.jobRole || '',
+        education: user.education || '',
+        religion: user.religion || '',
+        address: user.address || '',
+        city: user.city || ''
       });
     }
   }, [user]);
@@ -43,8 +58,20 @@ const Profile = () => {
     setIsUpdating(true);
     try {
       await updateProfile({
-        name: profileData.name
+        name: profileData.name,
+        bio: profileData.bio,
+        location: profileData.location,
+        mobileNumber: profileData.mobileNumber,
+        whatsappNumber: profileData.whatsappNumber,
+        jobRole: profileData.jobRole,
+        education: profileData.education,
+        religion: profileData.religion,
+        address: profileData.address,
+        city: profileData.city
       });
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      toast.error("Failed to update profile");
     } finally {
       setIsUpdating(false);
     }

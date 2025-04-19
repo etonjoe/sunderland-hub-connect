@@ -10,6 +10,13 @@ interface ProfileData {
   email: string;
   bio: string;
   location: string;
+  mobileNumber?: string;
+  whatsappNumber?: string;
+  jobRole?: string;
+  education?: string;
+  religion?: string;
+  address?: string;
+  city?: string;
 }
 
 interface PersonalInfoFormProps {
@@ -73,6 +80,83 @@ const PersonalInfoForm = ({ profileData, isUpdating, onChange, onSubmit }: Perso
               value={profileData.location}
               onChange={onChange}
               placeholder="City, Country"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mobileNumber">Mobile Number</Label>
+            <Input
+              id="mobileNumber"
+              name="mobileNumber"
+              value={profileData.mobileNumber || ''}
+              onChange={onChange}
+              placeholder="+1 (123) 456-7890"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
+            <Input
+              id="whatsappNumber"
+              name="whatsappNumber"
+              value={profileData.whatsappNumber || ''}
+              onChange={onChange}
+              placeholder="+1 (123) 456-7890"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="jobRole">Job Role</Label>
+            <Input
+              id="jobRole"
+              name="jobRole"
+              value={profileData.jobRole || ''}
+              onChange={onChange}
+              placeholder="Software Engineer"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="education">Education</Label>
+            <Input
+              id="education"
+              name="education"
+              value={profileData.education || ''}
+              onChange={onChange}
+              placeholder="Bachelor's in Computer Science"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="religion">Religion</Label>
+            <Input
+              id="religion"
+              name="religion"
+              value={profileData.religion || ''}
+              onChange={onChange}
+              placeholder="Optional"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              name="address"
+              value={profileData.address || ''}
+              onChange={onChange}
+              placeholder="123 Main St"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="city">City</Label>
+            <Input
+              id="city"
+              name="city"
+              value={profileData.city || ''}
+              onChange={onChange}
+              placeholder="New York"
             />
           </div>
           

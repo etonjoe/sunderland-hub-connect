@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   email: string;
@@ -9,6 +8,13 @@ export interface User {
   createdAt: Date;
   bio?: string;
   location?: string;
+  mobileNumber?: string;
+  whatsappNumber?: string;
+  jobRole?: string;
+  education?: string;
+  religion?: string;
+  address?: string;
+  city?: string;
 }
 
 export interface Profile {
@@ -17,6 +23,12 @@ export interface Profile {
   bio: string;
   location: string;
   phoneNumber?: string;
+  whatsappNumber?: string;
+  jobRole?: string;
+  education?: string;
+  religion?: string;
+  address?: string;
+  city?: string;
 }
 
 export interface ForumPost {
