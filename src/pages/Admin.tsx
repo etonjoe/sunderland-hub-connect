@@ -28,38 +28,43 @@ const Admin = () => {
   
   const isAdmin = user?.role === 'admin';
   
-  useEffect(() => {
-    const fetchUsers = async () => {
-      setIsLoading(true);
-      setHasError(false);
-      
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, name, role, is_premium');
-        
-        if (error) {
-          console.error('Supabase users fetch error:', error);
-          toast.error('Failed to retrieve users');
-          setHasError(true);
-        } else {
-          const userList = (data || []).map(profile => ({
-            ...profile,
-            email: profile.name, // Note: This is a placeholder. You'll need to get emails from auth.users
-            lastLogin: 'Not available',
-            isPremium: profile.is_premium
-          }));
-          setUsers(userList);
-        }
-      } catch (err) {
-        console.error('Error fetching users:', err);
-        toast.error('Failed to retrieve users data');
-        setHasError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Create a fetchUsers function that we can call both on initial load and after user creation
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    setHasError(false);
     
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, role, is_premium, created_at');
+      
+      if (error) {
+        console.error('Supabase users fetch error:', error);
+        toast.error('Failed to retrieve users');
+        setHasError(true);
+      } else {
+        const userList = (data || []).map(profile => ({
+          id: profile.id,
+          email: profile.name, // Note: This is a placeholder. You'll need to get emails from auth.users
+          name: profile.name,
+          role: profile.role,
+          isPremium: profile.is_premium,
+          lastLogin: 'Not available',
+          // Add the required createdAt field from the database or default to current date
+          createdAt: profile.created_at ? new Date(profile.created_at) : new Date()
+        }));
+        setUsers(userList);
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      toast.error('Failed to retrieve users data');
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchUsers();
   }, []);
   
@@ -70,7 +75,7 @@ const Admin = () => {
   );
   
   const handleUserAdded = () => {
-    // Refresh users list after adding a new user
+    // Call fetchUsers to refresh the users list after adding a new user
     fetchUsers();
   };
   
