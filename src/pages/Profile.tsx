@@ -27,8 +27,8 @@ const Profile = () => {
       setProfileData({
         name: user.name,
         email: user.email,
-        bio: '',
-        location: ''
+        bio: user.bio,
+        location: user.location
       });
     }
   }, [user]);
