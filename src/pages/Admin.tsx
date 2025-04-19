@@ -1,18 +1,18 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, User as UserIcon, Activity, FileText, Bell, AlertCircle } from 'lucide-react';
+import { Users, User as UserIcon, Activity, FileText, Bell, AlertCircle, Flag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Import our new components
+// Import our components
 import Dashboard from './admin/Dashboard';
 import UsersManagement from './admin/UsersManagement';
 import ActivityLog from './admin/ActivityLog';
 import ContentManagement from './admin/ContentManagement';
 import AnnouncementManagement from './admin/AnnouncementManagement';
+import ReportsManagement from './admin/ReportsManagement';
 import AccessDenied from './admin/AccessDenied';
 import { ADMIN_USERS } from './admin/AdminData';
 import { toast } from 'sonner';
@@ -89,7 +89,7 @@ const Admin = () => {
       )}
       
       <Tabs defaultValue="dashboard">
-        <TabsList className="grid w-full grid-cols-5 mb-6">
+        <TabsList className="grid w-full grid-cols-6 mb-6">
           <TabsTrigger value="dashboard">
             <Activity className="mr-2 h-4 w-4" />
             Dashboard
@@ -109,6 +109,10 @@ const Admin = () => {
           <TabsTrigger value="announcements">
             <Bell className="mr-2 h-4 w-4" />
             Announcements
+          </TabsTrigger>
+          <TabsTrigger value="reports">
+            <Flag className="mr-2 h-4 w-4" />
+            Reports
           </TabsTrigger>
         </TabsList>
         
@@ -147,6 +151,10 @@ const Admin = () => {
             
             <TabsContent value="announcements">
               <AnnouncementManagement />
+            </TabsContent>
+
+            <TabsContent value="reports">
+              <ReportsManagement />
             </TabsContent>
           </>
         )}

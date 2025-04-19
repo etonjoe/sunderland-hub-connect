@@ -90,6 +90,45 @@ export type Database = {
         }
         Relationships: []
       }
+      content_reports: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string | null
+          description: string
+          id: string
+          reporter_id: string
+          resolved_by: string | null
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          description: string
+          id?: string
+          reporter_id: string
+          resolved_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          reporter_id?: string
+          resolved_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       forum_categories: {
         Row: {
           created_at: string | null
