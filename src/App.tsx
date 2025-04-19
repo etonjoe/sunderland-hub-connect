@@ -1,3 +1,4 @@
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +18,7 @@ import Announcements from "./pages/Announcements";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import ConfirmationSuccess from "./pages/ConfirmationSuccess";
+import AboutUs from "./pages/AboutUs";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +91,7 @@ const AppRoutes = () => {
             } 
           />
           <Route path="/auth/confirm" element={<ConfirmationSuccess />} />
+          <Route path="/about" element={<AboutUs />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

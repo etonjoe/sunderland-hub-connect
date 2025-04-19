@@ -1,10 +1,31 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { FileText, Folder, PlusCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 const ContentManagement = () => {
+  const navigate = useNavigate();
+
+  const handleCreateForumPost = async () => {
+    try {
+      navigate('/forum?action=new');
+    } catch (error) {
+      toast.error('Failed to create forum post');
+    }
+  };
+
+  const handleManageResources = () => {
+    navigate('/resources?action=manage');
+  };
+
+  const handleManageForum = () => {
+    navigate('/forum?view=manage');
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -24,7 +45,9 @@ const ContentManagement = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Manage and moderate all forum posts and discussions.
               </p>
-              <Button size="sm" className="w-full">Manage Forum Posts</Button>
+              <Button size="sm" className="w-full" onClick={handleManageForum}>
+                Manage Forum Posts
+              </Button>
             </CardContent>
           </Card>
           
@@ -37,7 +60,9 @@ const ContentManagement = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Review and manage family resource materials and files.
               </p>
-              <Button size="sm" className="w-full">Manage Resources</Button>
+              <Button size="sm" className="w-full" onClick={handleManageResources}>
+                Manage Resources
+              </Button>
             </CardContent>
           </Card>
           
@@ -50,13 +75,11 @@ const ContentManagement = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Create new resources, forum categories, or other content.
               </p>
-              <Button size="sm" className="w-full">Add Content</Button>
+              <Button size="sm" className="w-full" onClick={handleCreateForumPost}>
+                Create New Post
+              </Button>
             </CardContent>
           </Card>
-        </div>
-        
-        <div className="mt-6 text-center text-muted-foreground">
-          <p>Content management features will be available in a future update.</p>
         </div>
       </CardContent>
     </Card>
