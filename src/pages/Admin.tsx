@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,13 +17,14 @@ import AccessDenied from './admin/AccessDenied';
 import { ADMIN_USERS } from './admin/AdminData';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { User } from '@/types';
 
 const Admin = () => {
   const { user, isAuthenticated } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [users, setUsers] = useState(ADMIN_USERS);
+  const [users, setUsers] = useState<User[]>(ADMIN_USERS);
   
   const isAdmin = user?.role === 'admin';
   
@@ -47,7 +47,7 @@ const Admin = () => {
           id: profile.id,
           email: profile.name, // Note: This is a placeholder. You'll need to get emails from auth.users
           name: profile.name,
-          role: profile.role,
+          role: (profile.role === 'admin' ? 'admin' : 'user') as 'admin' | 'user', // Cast to the specific union type
           isPremium: profile.is_premium,
           lastLogin: 'Not available',
           // Add the required createdAt field from the database or default to current date
