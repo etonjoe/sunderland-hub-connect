@@ -1,31 +1,56 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Plus } from 'lucide-react';
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface AboutRow {
-  id: number;
+  id: string;
   image: string;
   text: string;
 }
 
 const AboutUs = () => {
-  const [rows, setRows] = useState<AboutRow[]>([
-    { id: 1, image: '/placeholder.svg', text: 'Our mission is to connect families and build stronger communities.' },
-    { id: 2, image: '/placeholder.svg', text: 'We believe in the power of shared experiences and knowledge.' },
-    { id: 3, image: '/placeholder.svg', text: 'Our platform enables seamless communication and resource sharing.' },
-    { id: 4, image: '/placeholder.svg', text: 'We support families through every stage of their journey.' },
-    { id: 5, image: '/placeholder.svg', text: 'Join us in creating lasting connections and memories.' },
-  ]);
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
-  const addNewRow = () => {
-    const newId = Math.max(...rows.map(row => row.id)) + 1;
-    setRows([...rows, {
-      id: newId,
-      image: '/placeholder.svg',
-      text: 'Add your content here...'
-    }]);
+  const { data: rows = [], refetch } = useQuery({
+    queryKey: ['about-rows'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('about_rows')
+        .select('*')
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching about rows:', error);
+        return [];
+      }
+      
+      return data as AboutRow[];
+    }
+  });
+
+  const addNewRow = async () => {
+    if (!isAdmin) return;
+
+    const { error } = await supabase
+      .from('about_rows')
+      .insert({
+        image: '/placeholder.svg',
+        text: 'Add your content here...',
+        created_by: user?.id
+      });
+
+    if (error) {
+      console.error('Error adding new row:', error);
+      return;
+    }
+
+    refetch();
   };
 
   return (
@@ -53,12 +78,14 @@ const AboutUs = () => {
         ))}
       </div>
       
-      <div className="mt-8 text-center">
-        <Button onClick={addNewRow} variant="outline" className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add New Row
-        </Button>
-      </div>
+      {isAuthenticated && isAdmin && (
+        <div className="mt-8 text-center">
+          <Button onClick={addNewRow} variant="outline" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add New Row
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
