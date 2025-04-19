@@ -7,6 +7,8 @@ export interface User {
   role: 'user' | 'admin';
   isPremium: boolean;
   createdAt: Date;
+  bio?: string;
+  location?: string;
 }
 
 export interface Profile {
