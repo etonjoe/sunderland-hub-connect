@@ -90,6 +90,62 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_group_members: {
+        Row: {
+          group_id: string
+          joined_at: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          joined_at?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          joined_at?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "chat_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_groups: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       content_reports: {
         Row: {
           content_id: string
@@ -370,6 +426,62 @@ export type Database = {
           period?: string
           renewals?: number
           subscriptions?: number
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          joined_at: string | null
+          role: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string | null
+          role?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string | null
+          role?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

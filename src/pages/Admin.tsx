@@ -1,12 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, User as UserIcon, Activity, FileText, Bell, AlertCircle, Flag } from 'lucide-react';
+import { Users, User as UserIcon, Activity, FileText, Bell, AlertCircle, Flag, UserPlus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Import our components
+// Import components
 import Dashboard from './admin/Dashboard';
 import UsersManagement from './admin/UsersManagement';
 import ActivityLog from './admin/ActivityLog';
@@ -33,17 +34,22 @@ const Admin = () => {
       setHasError(false);
       
       try {
-        // Test the connection to Supabase
-        const { data, error } = await supabase.from('profiles').select('*').limit(10);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, role, is_premium');
         
         if (error) {
-          console.error('Supabase connection error:', error);
-          toast.error('Failed to connect to the database');
+          console.error('Supabase users fetch error:', error);
+          toast.error('Failed to retrieve users');
           setHasError(true);
         } else {
-          console.log('Successfully connected to Supabase:', data);
-          // We'll still use the demo data for now
-          setUsers(ADMIN_USERS);
+          const userList = (data || []).map(profile => ({
+            ...profile,
+            email: profile.name, // Note: This is a placeholder. You'll need to get emails from auth.users
+            lastLogin: 'Not available',
+            isPremium: profile.is_premium
+          }));
+          setUsers(userList);
         }
       } catch (err) {
         console.error('Error fetching users:', err);
@@ -59,9 +65,14 @@ const Admin = () => {
   
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     u.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  const handleUserAdded = () => {
+    // Refresh users list after adding a new user
+    fetchUsers();
+  };
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -89,7 +100,7 @@ const Admin = () => {
       )}
       
       <Tabs defaultValue="dashboard">
-        <TabsList className="grid w-full grid-cols-6 mb-6">
+        <TabsList className="grid w-full grid-cols-7 mb-6">
           <TabsTrigger value="dashboard">
             <Activity className="mr-2 h-4 w-4" />
             Dashboard
@@ -113,6 +124,10 @@ const Admin = () => {
           <TabsTrigger value="reports">
             <Flag className="mr-2 h-4 w-4" />
             Reports
+          </TabsTrigger>
+          <TabsTrigger value="teams">
+            <Users className="mr-2 h-4 w-4" />
+            Teams
           </TabsTrigger>
         </TabsList>
         
@@ -138,6 +153,7 @@ const Admin = () => {
                 users={filteredUsers}
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
+                onUserAdded={handleUserAdded}
               />
             </TabsContent>
             
@@ -155,6 +171,13 @@ const Admin = () => {
 
             <TabsContent value="reports">
               <ReportsManagement />
+            </TabsContent>
+
+            <TabsContent value="teams">
+              {/* TODO: Add Teams Management Component */}
+              <div className="text-center py-12 text-muted-foreground">
+                Teams management coming soon
+              </div>
             </TabsContent>
           </>
         )}
