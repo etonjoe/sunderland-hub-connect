@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -97,7 +98,7 @@ const AppRoutes = () => {
       </main>
       <footer className="bg-muted py-6 mt-12">
         <div className="container text-center text-muted-foreground">
-          <p>© 2023 SunderlandFamily Hub. All rights reserved.</p>
+          <p>© 2025 SunderlandFamily Hub. All rights reserved.</p>
         </div>
       </footer>
     </div>
