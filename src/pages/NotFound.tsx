@@ -19,8 +19,11 @@ const NotFound = () => {
       <div className="text-center max-w-md p-6">
         <h1 className="text-6xl font-bold mb-4 text-primary">404</h1>
         <p className="text-2xl font-semibold mb-2">Page Not Found</p>
+        <p className="text-muted-foreground mb-2">
+          The page <span className="font-mono bg-muted px-2 py-1 rounded">{location.pathname}</span> could not be found.
+        </p>
         <p className="text-muted-foreground mb-6">
-          Sorry, we couldn't find the page you're looking for.
+          Please check the URL or navigate back to the home page.
         </p>
         <Button asChild>
           <Link to="/" className="inline-flex items-center">

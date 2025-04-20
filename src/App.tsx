@@ -95,6 +95,7 @@ const AppRoutes = () => {
               </ProtectedRoute>
             } 
           />
+          <Route path="/family-hub-assistant" element={<Navigate to="/ai-assistant" replace />} />
           <Route 
             path="/admin" 
             element={
