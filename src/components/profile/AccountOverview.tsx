@@ -53,14 +53,25 @@ const AccountOverview = ({ user, isUpgrading, onUpgrade }: AccountOverviewProps)
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update user profile
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar: urlData.publicUrl }
-      });
+      // Update profiles table with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar: urlData.publicUrl })
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
+
+      // Update auth metadata with new avatar
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { avatar_url: urlData.publicUrl }
+      });
+
+      if (authError) throw authError;
       
       toast.success('Avatar updated successfully');
+      
+      // Reload page to show new avatar
+      window.location.reload();
     } catch (error) {
       console.error('Error uploading avatar:', error);
       toast.error('Failed to update avatar');
