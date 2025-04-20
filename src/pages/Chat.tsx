@@ -12,7 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 import CreateChatGroup from '@/components/chat/CreateChatGroup';
 import { toast } from 'sonner';
 
-// Sample data
 const MESSAGES: ChatMessage[] = [
   {
     id: '1',
@@ -88,18 +87,15 @@ const Chat = () => {
   const isPremium = user?.isPremium || false;
   
   useEffect(() => {
-    // Filter messages based on active conversation
     setChatMessages(MESSAGES.filter(msg => msg.groupId === activeConversation));
   }, [activeConversation]);
   
   useEffect(() => {
-    // Load chat groups from the database
     const fetchChatGroups = async () => {
       if (!user) return;
       
       setIsLoadingGroups(true);
       try {
-        // Get groups where the user is a member
         const { data: membershipData, error: membershipError } = await supabase
           .from('chat_group_members')
           .select('group_id')
@@ -138,7 +134,6 @@ const Chat = () => {
   }, [user]);
   
   useEffect(() => {
-    // Scroll to bottom on new messages
     if (scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
@@ -175,44 +170,46 @@ const Chat = () => {
   };
 
   const handleGroupCreated = () => {
-    // Refresh the list of chat groups
     if (user) {
       setIsLoadingGroups(true);
-      supabase
-        .from('chat_group_members')
-        .select('group_id')
-        .eq('user_id', user.id)
-        .then(({ data: membershipData, error: membershipError }) => {
+      
+      const fetchGroups = async () => {
+        try {
+          const { data: membershipData, error: membershipError } = await supabase
+            .from('chat_group_members')
+            .select('group_id')
+            .eq('user_id', user.id);
+          
           if (membershipError) throw membershipError;
           
           if (membershipData && membershipData.length > 0) {
             const groupIds = membershipData.map(item => item.group_id);
             
-            supabase
+            const { data: groupsData, error: groupsError } = await supabase
               .from('chat_groups')
               .select('*')
-              .in('id', groupIds)
-              .then(({ data: groupsData, error: groupsError }) => {
-                if (groupsError) throw groupsError;
-                
-                setChatGroups(groupsData.map(group => ({
-                  id: group.id,
-                  name: group.name,
-                  memberIds: [],
-                  createdAt: new Date(group.created_at)
-                })));
-                setIsLoadingGroups(false);
-              });
+              .in('id', groupIds);
+            
+            if (groupsError) throw groupsError;
+            
+            setChatGroups(groupsData.map(group => ({
+              id: group.id,
+              name: group.name,
+              memberIds: [],
+              createdAt: new Date(group.created_at)
+            })));
           } else {
             setChatGroups([]);
-            setIsLoadingGroups(false);
           }
-        })
-        .catch(error => {
+        } catch (error) {
           console.error('Error refreshing chat groups:', error);
           toast.error('Failed to refresh chat groups');
+        } finally {
           setIsLoadingGroups(false);
-        });
+        }
+      };
+      
+      fetchGroups();
     }
   };
   
