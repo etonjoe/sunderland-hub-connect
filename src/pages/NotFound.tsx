@@ -3,16 +3,20 @@ import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NotFound = () => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
-      location.pathname
+      location.pathname,
+      "Auth status:",
+      isAuthenticated
     );
-  }, [location.pathname]);
+  }, [location.pathname, isAuthenticated]);
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-background">
@@ -22,6 +26,11 @@ const NotFound = () => {
         <p className="text-muted-foreground mb-2">
           The page <span className="font-mono bg-muted px-2 py-1 rounded">{location.pathname}</span> could not be found.
         </p>
+        {!isAuthenticated && location.pathname !== "/login" && (
+          <p className="text-muted-foreground mb-6">
+            You might need to <Link to="/login" className="text-primary hover:underline">log in</Link> to access this page.
+          </p>
+        )}
         <p className="text-muted-foreground mb-6">
           Please check the URL or navigate back to the home page.
         </p>

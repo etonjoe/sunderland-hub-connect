@@ -4,9 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -22,7 +21,14 @@ import ConfirmationSuccess from "./pages/ConfirmationSuccess";
 import AboutUs from "./pages/AboutUs";
 import AIAssistant from "./components/AIAssistant";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Protected route component
 const ProtectedRoute = ({ children, requiredRole = null }) => {
@@ -32,7 +38,6 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     return <Navigate to="/login" replace />;
   }
   
-  // For admin routes, check if user is admin
   if (requiredRole === 'admin' && user?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
@@ -55,57 +60,61 @@ const AppRoutes = () => {
       />
       <main className="flex-1">
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/forum" element={<Forum />} />
-          <Route 
-            path="/resources" 
-            element={
-              <ProtectedRoute>
-                <Resources />
-              </ProtectedRoute>
-            }
-          />
-          <Route 
-            path="/chat" 
-            element={
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/announcements" element={<Announcements />} />
-          <Route 
-            path="/ai-assistant" 
-            element={
-              <ProtectedRoute>
-                <div className="container py-8">
-                  <h1 className="text-2xl font-bold mb-6">Family Hub Assistant</h1>
-                  <AIAssistant />
-                </div>
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/family-hub-assistant" element={<Navigate to="/ai-assistant" replace />} />
-          <Route 
-            path="/admin" 
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <Admin />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/auth/confirm" element={<ConfirmationSuccess />} />
+          <Route path="/login" element={
+            isAuthenticated ? <Navigate to="/" replace /> : <Login />
+          } />
+          <Route path="/register" element={
+            isAuthenticated ? <Navigate to="/" replace /> : <Register />
+          } />
           <Route path="/about" element={<AboutUs />} />
+          <Route path="/auth/confirm" element={<ConfirmationSuccess />} />
+
+          {/* Protected routes */}
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/forum" element={
+            <ProtectedRoute>
+              <Forum />
+            </ProtectedRoute>
+          } />
+          <Route path="/resources" element={
+            <ProtectedRoute>
+              <Resources />
+            </ProtectedRoute>
+          } />
+          <Route path="/chat" element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          } />
+          <Route path="/announcements" element={
+            <ProtectedRoute>
+              <Announcements />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-assistant" element={
+            <ProtectedRoute>
+              <div className="container py-8">
+                <h1 className="text-2xl font-bold mb-6">Family Hub Assistant</h1>
+                <AIAssistant />
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path="/family-hub-assistant" element={<Navigate to="/ai-assistant" replace />} />
+          
+          {/* Admin routes */}
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin">
+              <Admin />
+            </ProtectedRoute>
+          } />
+          
+          {/* 404 route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
