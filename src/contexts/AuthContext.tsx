@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { toast } from 'sonner';
@@ -148,16 +149,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return false;
     
     try {
-      const { error } = await supabase.auth.updateUser({
+      // Update in auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
         data: userData
       });
 
-      if (error) {
-        toast.error(error.message);
+      if (authError) {
+        console.error('Auth update error:', authError);
+        toast.error(authError.message);
         return false;
       }
 
-      toast.success('Profile updated successfully');
+      // Also update in profiles table if it exists
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update(userData)
+          .eq('id', user.id);
+
+        if (profileError) {
+          console.warn('Profile update warning:', profileError);
+          // Don't return false here, we still updated the auth data successfully
+        }
+      } catch (profileUpdateError) {
+        console.warn('Profile table might not exist or has different structure:', profileUpdateError);
+        // Continue since we've already updated auth
+      }
+
+      // Update local user state
+      setUser(prev => prev ? { ...prev, ...userData } : null);
+      
       return true;
     } catch (error) {
       console.error('Update profile error:', error);

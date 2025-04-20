@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { User as UserType } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AvatarUploadProps {
   user: UserType;
@@ -12,6 +13,7 @@ interface AvatarUploadProps {
 
 const AvatarUpload = ({ user }: AvatarUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const { updateProfile } = useAuth();
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -31,14 +33,35 @@ const AvatarUpload = ({ user }: AvatarUploadProps) => {
 
     setIsUploading(true);
     try {
+      // Create the avatars bucket if it doesn't exist yet
+      try {
+        const { error: getBucketError } = await supabase.storage.getBucket('avatars');
+        if (getBucketError) {
+          // Bucket doesn't exist, create it
+          const { error: createBucketError } = await supabase.storage.createBucket('avatars', {
+            public: true,
+            fileSizeLimit: 2 * 1024 * 1024, // 2MB
+          });
+          
+          if (createBucketError) throw createBucketError;
+          console.log('Created avatars bucket');
+        }
+      } catch (bucketError) {
+        console.error('Error checking/creating bucket:', bucketError);
+        // Continue anyway, as the bucket might already exist
+      }
+
       // Upload to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type
+        });
 
       if (uploadError) throw uploadError;
 
@@ -47,28 +70,28 @@ const AvatarUpload = ({ user }: AvatarUploadProps) => {
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update profiles table with new avatar URL
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar: urlData.publicUrl })
-        .eq('id', user.id);
+      if (!urlData.publicUrl) {
+        throw new Error('Failed to get public URL for the avatar');
+      }
 
-      if (updateError) throw updateError;
+      console.log('Avatar uploaded successfully:', urlData.publicUrl);
 
-      // Update auth metadata with new avatar
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { avatar_url: urlData.publicUrl }
-      });
-
-      if (authError) throw authError;
+      // Update user profile with new avatar URL
+      const success = await updateProfile({ avatar: urlData.publicUrl });
+      
+      if (!success) {
+        throw new Error('Failed to update profile with new avatar');
+      }
       
       toast.success('Avatar updated successfully');
       
       // Reload page to show new avatar
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      toast.error('Failed to update avatar');
+      toast.error('Failed to update avatar: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsUploading(false);
     }
@@ -86,7 +109,11 @@ const AvatarUpload = ({ user }: AvatarUploadProps) => {
         htmlFor="avatar-upload" 
         className="absolute bottom-0 right-0 p-1 bg-primary text-primary-foreground rounded-full cursor-pointer"
       >
-        <UploadCloud size={16} />
+        {isUploading ? (
+          <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+        ) : (
+          <UploadCloud size={16} />
+        )}
         <input 
           id="avatar-upload" 
           type="file" 
