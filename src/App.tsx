@@ -20,6 +20,7 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import ConfirmationSuccess from "./pages/ConfirmationSuccess";
 import AboutUs from "./pages/AboutUs";
+import AIAssistant from "./components/AIAssistant";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,17 @@ const AppRoutes = () => {
             }
           />
           <Route path="/announcements" element={<Announcements />} />
+          <Route 
+            path="/ai-assistant" 
+            element={
+              <ProtectedRoute>
+                <div className="container py-8">
+                  <h1 className="text-2xl font-bold mb-6">Family Hub Assistant</h1>
+                  <AIAssistant />
+                </div>
+              </ProtectedRoute>
+            } 
+          />
           <Route 
             path="/admin" 
             element={
