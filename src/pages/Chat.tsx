@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatMessage, ChatGroup } from '@/types';
 import { Lock, Send, User, Users } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import CreateChatGroup from '@/components/chat/CreateChatGroup';
+import { toast } from 'sonner';
 
 // Sample data
 const MESSAGES: ChatMessage[] = [
@@ -59,27 +61,6 @@ const MESSAGES: ChatMessage[] = [
   }
 ];
 
-const GROUPS: ChatGroup[] = [
-  {
-    id: '1',
-    name: 'Family General',
-    memberIds: ['1', '2', '3'],
-    createdAt: new Date('2023-01-01')
-  },
-  {
-    id: '2',
-    name: 'Event Planning',
-    memberIds: ['1', '3'],
-    createdAt: new Date('2023-02-15')
-  },
-  {
-    id: '3',
-    name: 'Genealogy Research',
-    memberIds: ['1', '2', '3'],
-    createdAt: new Date('2023-03-10')
-  }
-];
-
 const DIRECT_CHATS = [
   {
     id: 'direct_1_3',
@@ -100,6 +81,8 @@ const Chat = () => {
   const [activeConversation, setActiveConversation] = useState<string>('1');
   const [messageInput, setMessageInput] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatGroups, setChatGroups] = useState<ChatGroup[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const isPremium = user?.isPremium || false;
@@ -108,6 +91,51 @@ const Chat = () => {
     // Filter messages based on active conversation
     setChatMessages(MESSAGES.filter(msg => msg.groupId === activeConversation));
   }, [activeConversation]);
+  
+  useEffect(() => {
+    // Load chat groups from the database
+    const fetchChatGroups = async () => {
+      if (!user) return;
+      
+      setIsLoadingGroups(true);
+      try {
+        // Get groups where the user is a member
+        const { data: membershipData, error: membershipError } = await supabase
+          .from('chat_group_members')
+          .select('group_id')
+          .eq('user_id', user.id);
+        
+        if (membershipError) throw membershipError;
+        
+        if (membershipData && membershipData.length > 0) {
+          const groupIds = membershipData.map(item => item.group_id);
+          
+          const { data: groupsData, error: groupsError } = await supabase
+            .from('chat_groups')
+            .select('*')
+            .in('id', groupIds);
+          
+          if (groupsError) throw groupsError;
+          
+          setChatGroups(groupsData.map(group => ({
+            id: group.id,
+            name: group.name,
+            memberIds: [],
+            createdAt: new Date(group.created_at)
+          })));
+        } else {
+          setChatGroups([]);
+        }
+      } catch (error) {
+        console.error('Error fetching chat groups:', error);
+        toast.error('Failed to load chat groups');
+      } finally {
+        setIsLoadingGroups(false);
+      }
+    };
+    
+    fetchChatGroups();
+  }, [user]);
   
   useEffect(() => {
     // Scroll to bottom on new messages
@@ -129,7 +157,7 @@ const Chat = () => {
       content: messageInput,
       senderId: user.id,
       senderName: user.name,
-      senderAvatar: undefined,
+      senderAvatar: user.avatar,
       groupId: activeConversation,
       timestamp: new Date(),
       read: true
@@ -144,6 +172,48 @@ const Chat = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleGroupCreated = () => {
+    // Refresh the list of chat groups
+    if (user) {
+      setIsLoadingGroups(true);
+      supabase
+        .from('chat_group_members')
+        .select('group_id')
+        .eq('user_id', user.id)
+        .then(({ data: membershipData, error: membershipError }) => {
+          if (membershipError) throw membershipError;
+          
+          if (membershipData && membershipData.length > 0) {
+            const groupIds = membershipData.map(item => item.group_id);
+            
+            supabase
+              .from('chat_groups')
+              .select('*')
+              .in('id', groupIds)
+              .then(({ data: groupsData, error: groupsError }) => {
+                if (groupsError) throw groupsError;
+                
+                setChatGroups(groupsData.map(group => ({
+                  id: group.id,
+                  name: group.name,
+                  memberIds: [],
+                  createdAt: new Date(group.created_at)
+                })));
+                setIsLoadingGroups(false);
+              });
+          } else {
+            setChatGroups([]);
+            setIsLoadingGroups(false);
+          }
+        })
+        .catch(error => {
+          console.error('Error refreshing chat groups:', error);
+          toast.error('Failed to refresh chat groups');
+          setIsLoadingGroups(false);
+        });
+    }
   };
   
   if (!isAuthenticated) {
@@ -177,17 +247,25 @@ const Chat = () => {
           <div className="space-y-1">
             <h2 className="text-sm font-medium text-muted-foreground px-2">GROUP CHATS</h2>
             <div className="space-y-1">
-              {GROUPS.map(group => (
-                <Button
-                  key={group.id}
-                  variant="ghost"
-                  className={`w-full justify-start ${activeConversation === group.id ? 'bg-muted' : ''}`}
-                  onClick={() => setActiveConversation(group.id)}
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  <span className="truncate">{group.name}</span>
-                </Button>
-              ))}
+              {isLoadingGroups ? (
+                <div className="px-2 py-1 text-sm text-muted-foreground">Loading...</div>
+              ) : (
+                <>
+                  {chatGroups.map(group => (
+                    <Button
+                      key={group.id}
+                      variant="ghost"
+                      className={`w-full justify-start ${activeConversation === group.id ? 'bg-muted' : ''}`}
+                      onClick={() => setActiveConversation(group.id)}
+                    >
+                      <Users className="mr-2 h-4 w-4" />
+                      <span className="truncate">{group.name}</span>
+                    </Button>
+                  ))}
+                  
+                  <CreateChatGroup onGroupCreated={handleGroupCreated} />
+                </>
+              )}
             </div>
           </div>
           
@@ -214,7 +292,7 @@ const Chat = () => {
             <CardContent className="flex-1 p-0 flex flex-col h-full">
               <div className="p-4 border-b bg-muted/50">
                 <h2 className="font-semibold">
-                  {GROUPS.find(g => g.id === activeConversation)?.name || 
+                  {chatGroups.find(g => g.id === activeConversation)?.name || 
                    DIRECT_CHATS.find(d => d.id === activeConversation)?.name || 
                    'Chat'}
                 </h2>
@@ -226,6 +304,7 @@ const Chat = () => {
                     <div key={message.id} className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
                       <div className={`flex ${message.senderId === user?.id ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 max-w-[75%]`}>
                         <Avatar className="h-8 w-8">
+                          <AvatarImage src={message.senderAvatar} />
                           <AvatarFallback className="bg-family-blue text-white">
                             {message.senderName.charAt(0)}
                           </AvatarFallback>

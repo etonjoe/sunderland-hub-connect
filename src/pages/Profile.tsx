@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import AccountOverview from '@/components/profile/AccountOverview';
 import PersonalInfoForm from '@/components/profile/PersonalInfoForm';
 import SubscriptionDetails from '@/components/profile/SubscriptionDetails';
 import NotificationPreferences from '@/components/profile/NotificationPreferences';
+import AIAssistant from '@/components/AIAssistant';
 import { toast } from 'sonner';
 
 const Profile = () => {
@@ -103,6 +105,11 @@ const Profile = () => {
             Admin
           </Badge>
         )}
+        {user?.role === 'moderator' && (
+          <Badge variant="outline" className="ml-2 border-family-blue text-family-blue">
+            Moderator
+          </Badge>
+        )}
         {user?.isPremium && (
           <Badge className="ml-2 bg-family-orange">
             Premium
@@ -111,12 +118,14 @@ const Profile = () => {
       </h1>
       
       <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 space-y-6">
           <AccountOverview 
             user={user} 
             isUpgrading={isUpgrading}
             onUpgrade={handleUpgrade}
           />
+
+          <AIAssistant />
         </div>
         
         <div className="md:col-span-2">
