@@ -27,7 +27,7 @@ export interface ForumCategory {
 
 export interface ForumPost {
   id: string;
-  categoryId?: string;
+  categoryId?: string;  // Making this optional to match usage
   title: string;
   content: string;
   authorId: string;

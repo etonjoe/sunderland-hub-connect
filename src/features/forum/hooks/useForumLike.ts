@@ -18,7 +18,10 @@ export const useForumLike = (postId: string) => {
         .from('forum_post_likes')
         .select('*', { count: 'exact', head: true })
         .eq('post_id', postId);
-      setLikesCount(count || 0);
+      
+      if (!ignore) {
+        setLikesCount(count || 0);
+      }
 
       // Check if user liked this post
       if (user) {
@@ -28,15 +31,19 @@ export const useForumLike = (postId: string) => {
           .eq('post_id', postId)
           .eq('user_id', user.id)
           .maybeSingle();
+        
         if (!ignore) {
           setIsLiked(!!likeData);
           setLikeId(likeData?.id ?? null);
         }
       } else {
-        setIsLiked(false);
-        setLikeId(null);
+        if (!ignore) {
+          setIsLiked(false);
+          setLikeId(null);
+        }
       }
     };
+    
     fetchLikes();
     return () => { ignore = true; }
     // eslint-disable-next-line
@@ -44,6 +51,7 @@ export const useForumLike = (postId: string) => {
 
   const toggleLike = async () => {
     if (!user) return;
+    
     if (isLiked && likeId) {
       await supabase.from('forum_post_likes').delete().eq('id', likeId);
       setIsLiked(false);
@@ -54,6 +62,7 @@ export const useForumLike = (postId: string) => {
         post_id: postId,
         user_id: user.id,
       }).select('id').single();
+      
       setIsLiked(true);
       setLikeId(data?.id);
       setLikesCount((c) => c + 1);

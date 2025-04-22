@@ -54,7 +54,7 @@ const PostCard = ({ post, categories, formatDate }: PostCardProps) => {
       .from('forum_comments')
       .select(`
         id, author_id, content, created_at,
-        profiles ( name )
+        profiles:author_id(name)
       `)
       .eq('post_id', post.id)
       .order('created_at', { ascending: true });
