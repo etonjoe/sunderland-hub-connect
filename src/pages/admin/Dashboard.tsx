@@ -7,11 +7,11 @@ import AnalyticsChart from '@/components/admin/AnalyticsChart';
 import MembershipTable from '@/components/admin/MembershipTable';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserType, MembershipStat, ActivityStat, RevenueStat } from '@/types/admin';
+import { User, MembershipStat, ActivityStat, RevenueStat } from '@/types';
 import { toast } from 'sonner';
 
 interface DashboardProps {
-  users: UserType[];
+  users: User[];
 }
 
 const Dashboard = ({ users }: DashboardProps) => {
@@ -30,7 +30,15 @@ const Dashboard = ({ users }: DashboardProps) => {
         throw error;
       }
       
-      return data as MembershipStat[];
+      // Map snake_case DB fields to camelCase TypeScript interface properties
+      return data.map(item => ({
+        id: item.id,
+        period: item.period,
+        totalUsers: item.total_users,
+        premiumUsers: item.premium_users,
+        retentionRate: item.retention_rate,
+        createdAt: new Date(item.created_at)
+      })) as MembershipStat[];
     }
   });
 
@@ -47,7 +55,16 @@ const Dashboard = ({ users }: DashboardProps) => {
         throw error;
       }
       
-      return data as ActivityStat[];
+      // Map snake_case DB fields to camelCase TypeScript interface properties
+      return data.map(item => ({
+        id: item.id,
+        period: item.period,
+        forumPosts: item.forum_posts,
+        chatMessages: item.chat_messages,
+        resourceUploads: item.resource_uploads,
+        activeUsers: item.active_users,
+        createdAt: new Date(item.created_at)
+      })) as ActivityStat[];
     }
   });
 
@@ -64,7 +81,15 @@ const Dashboard = ({ users }: DashboardProps) => {
         throw error;
       }
       
-      return data as RevenueStat[];
+      // Map snake_case DB fields to camelCase TypeScript interface properties
+      return data.map(item => ({
+        id: item.id,
+        period: item.period,
+        amount: item.amount,
+        subscriptions: item.subscriptions,
+        renewals: item.renewals,
+        createdAt: new Date(item.created_at)
+      })) as RevenueStat[];
     }
   });
 
@@ -73,9 +98,9 @@ const Dashboard = ({ users }: DashboardProps) => {
   }
 
   const latestStats = membershipStats[membershipStats.length - 1] || {
-    total_users: 0,
-    premium_users: 0,
-    retention_rate: 0
+    totalUsers: 0,
+    premiumUsers: 0,
+    retentionRate: 0
   };
 
   return (
@@ -96,8 +121,8 @@ const Dashboard = ({ users }: DashboardProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard 
           title="Total Members" 
-          value={latestStats.total_users.toString()}
-          description={`${((latestStats.total_users / (membershipStats[membershipStats.length - 2]?.total_users || 1) - 1) * 100).toFixed(0)}% growth this month`}
+          value={latestStats.totalUsers.toString()}
+          description={`${((latestStats.totalUsers / (membershipStats[membershipStats.length - 2]?.totalUsers || 1) - 1) * 100).toFixed(0)}% growth this month`}
           icon={<Users />}
           trend={{ 
             value: 15, 
@@ -107,8 +132,8 @@ const Dashboard = ({ users }: DashboardProps) => {
         />
         <StatsCard 
           title="Premium Members" 
-          value={latestStats.premium_users.toString()}
-          description={`${((latestStats.premium_users / latestStats.total_users) * 100).toFixed(0)}% of total members`}
+          value={latestStats.premiumUsers.toString()}
+          description={`${((latestStats.premiumUsers / latestStats.totalUsers) * 100).toFixed(0)}% of total members`}
           icon={<Users />}
           trend={{ 
             value: 12, 
@@ -129,7 +154,7 @@ const Dashboard = ({ users }: DashboardProps) => {
         />
         <StatsCard 
           title="Retention Rate" 
-          value={`${latestStats.retention_rate}%`}
+          value={`${latestStats.retentionRate}%`}
           description="3 cancellations this month"
           icon={<Calendar />}
           trend={{ 
@@ -149,28 +174,28 @@ const Dashboard = ({ users }: DashboardProps) => {
           type="line"
           xAxisDataKey="period"
           dataKeys={[
-            { key: "total_users", name: "Total Members", color: "#1E88E5" },
-            { key: "premium_users", name: "Premium Members", color: "#FF9800" }
+            { key: "totalUsers", name: "Total Members", color: "#1E88E5" },
+            { key: "premiumUsers", name: "Premium Members", color: "#FF9800" }
           ]}
         />
 
         <StatsCard 
           title="Active Users Today" 
-          value={activityStats[activityStats.length - 1]?.active_users.toString() || "0"}
+          value={activityStats[activityStats.length - 1]?.activeUsers.toString() || "0"}
           description="70% of total members"
           icon={<TrendingUp />}
           trend={{ value: 5, isPositive: true, description: "from yesterday" }}
         />
         <StatsCard 
           title="New Posts Today" 
-          value={activityStats[activityStats.length - 1]?.forum_posts.toString() || "0"}
+          value={activityStats[activityStats.length - 1]?.forumPosts.toString() || "0"}
           description="23% increase from yesterday"
           icon={<MessageSquare />}
           trend={{ value: 23, isPositive: true, description: "from yesterday" }}
         />
         <StatsCard 
           title="New Resources" 
-          value={activityStats[activityStats.length - 1]?.resource_uploads.toString() || "0"}
+          value={activityStats[activityStats.length - 1]?.resourceUploads.toString() || "0"}
           description="This week"
           icon={<FileText />}
           trend={{ value: 40, isPositive: true, description: "from last week" }}
@@ -186,9 +211,9 @@ const Dashboard = ({ users }: DashboardProps) => {
           type="bar"
           xAxisDataKey="period"
           dataKeys={[
-            { key: "forum_posts", name: "Forum Posts", color: "#1E88E5" },
-            { key: "resource_uploads", name: "Resource Uploads", color: "#43A047" },
-            { key: "chat_messages", name: "Chat Messages", color: "#FF9800" }
+            { key: "forumPosts", name: "Forum Posts", color: "#1E88E5" },
+            { key: "resourceUploads", name: "Resource Uploads", color: "#43A047" },
+            { key: "chatMessages", name: "Chat Messages", color: "#FF9800" }
           ]}
         />
 
