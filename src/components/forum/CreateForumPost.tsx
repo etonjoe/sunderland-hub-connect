@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForumCategory } from '@/types';
@@ -18,51 +18,35 @@ import { ForumCategory } from '@/types';
 const postSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
   content: z.string().min(10, "Content must be at least 10 characters"),
-  categoryId: z.string().min(1, "Please select a category"),
+  categoryId: z.string().optional(),
 });
 
-const CreateForumPost = ({ onPostCreated }) => {
+interface CreateForumPostProps {
+  categories: ForumCategory[];
+  onPostCreated: () => void;
+  defaultCategoryId?: string;
+}
+
+const CreateForumPost = ({ categories, onPostCreated, defaultCategoryId }: CreateForumPostProps) => {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories, setCategories] = useState<ForumCategory[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
   const form = useForm({
     resolver: zodResolver(postSchema),
     defaultValues: {
       title: "",
       content: "",
-      categoryId: "",
+      categoryId: defaultCategoryId || "",
     },
   });
 
+  // Update the form value when defaultCategoryId changes
   useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    setIsLoadingCategories(true);
-    try {
-      const { data, error } = await supabase
-        .from('forum_categories')
-        .select('id, name, description');
-      
-      if (error) throw error;
-      
-      setCategories(data.map(category => ({
-        id: category.id,
-        name: category.name,
-        description: category.description,
-        postsCount: 0 // This would typically come from a count query or join
-      })));
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast.error('Failed to load categories');
-    } finally {
-      setIsLoadingCategories(false);
+    if (defaultCategoryId) {
+      form.setValue('categoryId', defaultCategoryId);
     }
-  };
+  }, [defaultCategoryId, form]);
 
   const onSubmit = async (data) => {
     if (!user) {
@@ -77,7 +61,7 @@ const CreateForumPost = ({ onPostCreated }) => {
         .insert({
           title: data.title,
           content: data.content,
-          category_id: data.categoryId,
+          category_id: data.categoryId || null,
           author_id: user.id
         });
 
@@ -98,14 +82,14 @@ const CreateForumPost = ({ onPostCreated }) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-family-green hover:bg-green-600">
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Post
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Create Post
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Forum Post</DialogTitle>
+          <DialogTitle>Create New Post</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
@@ -117,7 +101,7 @@ const CreateForumPost = ({ onPostCreated }) => {
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter post title" {...field} />
+                    <Input placeholder="Enter post title..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,22 +113,19 @@ const CreateForumPost = ({ onPostCreated }) => {
               name="categoryId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>Category (Optional)</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
-                    disabled={isLoadingCategories}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={
-                          isLoadingCategories 
-                            ? "Loading categories..." 
-                            : "Select a category"
-                        } />
+                        <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="">No Category</SelectItem>
                       {categories.map(category => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
@@ -166,7 +147,7 @@ const CreateForumPost = ({ onPostCreated }) => {
                   <FormControl>
                     <Textarea 
                       placeholder="Write your post content here..." 
-                      rows={6}
+                      rows={8}
                       {...field} 
                     />
                   </FormControl>
