@@ -13,8 +13,20 @@ import SearchBar from '@/features/forum/components/SearchBar';
 import ForumHeader from '@/features/forum/components/ForumHeader';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Local type that matches how we're using it
-type ForumPost = GlobalForumPost;
+// Local type definition
+type ForumPost = {
+  id: string;
+  categoryId?: string;  // Made explicitly optional here to match global type
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  likesCount: number;
+  commentsCount: number;
+};
 
 const ForumCategoryPage = () => {
   const { categoryId } = useParams();

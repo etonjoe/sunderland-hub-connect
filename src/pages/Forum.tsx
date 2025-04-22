@@ -8,8 +8,20 @@ import CategoryCard from '@/features/forum/components/CategoryCard';
 import { useForumData } from '@/features/forum/hooks/useForumData';
 import { ForumPost as GlobalForumPost } from '@/types'; // Renamed import to avoid conflicts
 
-// Local type definition that matches how we're using it in this component
-type ForumPost = GlobalForumPost;
+// Local type definition
+type ForumPost = {
+  id: string;
+  categoryId?: string;  // Made explicitly optional here to match global type
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  likesCount: number;
+  commentsCount: number;
+};
 
 const Forum = () => {
   const { isAuthenticated, user } = useAuth();
