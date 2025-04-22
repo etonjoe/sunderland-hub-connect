@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -88,7 +89,7 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
       // First create the user
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
-        password: 'Temp1234!', // Temporary password, user should reset
+        password: `Temp${Math.floor(100000 + Math.random() * 900000)}!`, // Generate random secure password
         options: {
           data: {
             name: data.name,
@@ -101,8 +102,27 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
 
       // If successful, send invite email if requested
       if (data.sendInvite) {
-        // In a real application, you'd send an invite email here
-        toast.success('User created successfully. An invite has been sent.');
+        try {
+          // Send email notification using Supabase Edge Function (or simulated here)
+          const { error: emailError } = await supabase.functions.invoke('send-invitation', {
+            body: {
+              email: data.email,
+              name: data.name,
+              role: data.role,
+              inviter: currentUser?.name || 'Admin'
+            }
+          });
+          
+          if (emailError) {
+            console.warn('Email invitation could not be sent:', emailError);
+            toast.warning('User created, but invitation email could not be sent');
+          } else {
+            toast.success('User created successfully. An invitation has been sent.');
+          }
+        } catch (emailErr) {
+          console.warn('Email sending error:', emailErr);
+          toast.warning('User created, but invitation email could not be sent');
+        }
       } else {
         toast.success('User created successfully.');
       }
@@ -121,14 +141,52 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
   const onInviteUser = async (data) => {
     setIsSendingInvite(true);
     try {
-      // In a real application, this would connect to a server endpoint to send invitations
-      // For now, we'll simulate success
-      toast.success(`Invitation sent to ${data.email} for ${data.role} role`);
+      // Create a temporary password for the new user
+      const tempPassword = `Temp${Math.floor(100000 + Math.random() * 900000)}!`;
+      
+      // First create the user in the auth system
+      const { data: userData, error: createError } = await supabase.auth.signUp({
+        email: data.email,
+        password: tempPassword,
+        options: {
+          data: {
+            role: data.role,
+            invited_by: currentUser?.id
+          }
+        }
+      });
+
+      if (createError) throw createError;
+      
+      // Try to send an invitation email
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-invitation', {
+          body: {
+            email: data.email,
+            role: data.role,
+            inviter: currentUser?.name || 'Admin',
+            message: data.message,
+            temporaryPassword: tempPassword
+          }
+        });
+        
+        if (emailError) {
+          console.warn('Email invitation could not be sent:', emailError);
+          toast.warning('User invited, but email could not be sent. They will need to use password reset.');
+        } else {
+          toast.success(`Invitation sent to ${data.email} for ${data.role} role`);
+        }
+      } catch (emailErr) {
+        console.warn('Email sending error:', emailErr);
+        toast.warning('User invited, but email could not be sent. They will need to use password reset.');
+      }
+      
       setIsInviteDialogOpen(false);
       inviteUserForm.reset();
+      onUserAdded();
     } catch (error) {
-      console.error('Error sending invite:', error);
-      toast.error('Failed to send invite');
+      console.error('Error inviting user:', error);
+      toast.error('Failed to invite user: ' + error.message);
     } finally {
       setIsSendingInvite(false);
     }
@@ -282,7 +340,12 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
                         className="h-4 w-4 rounded border-gray-300"
                       />
                     </FormControl>
-                    <FormLabel className="m-0">Send invitation email</FormLabel>
+                    <div>
+                      <FormLabel className="m-0">Send invitation email</FormLabel>
+                      <FormDescription className="text-xs">
+                        The user will receive an email with login instructions
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -339,6 +402,9 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormDescription>
+                      This determines what permissions the user will have in the system
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -350,11 +416,14 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
                   <FormItem>
                     <FormLabel>Personal Message (Optional)</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Textarea 
                         placeholder="Add a personal message to the invitation"
                         {...field} 
                       />
                     </FormControl>
+                    <FormDescription>
+                      This message will be included in the invitation email
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

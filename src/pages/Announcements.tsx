@@ -8,6 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
 import { Announcement } from '@/types';
 import { Bell, Pin, Search, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from 'zod';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+// Form schema for creating an announcement
+const announcementSchema = z.object({
+  title: z.string().min(5, 'Title must be at least 5 characters'),
+  content: z.string().min(10, 'Content must be at least 10 characters'),
+  isPinned: z.boolean().default(false)
+});
 
 // Sample data
 const ANNOUNCEMENTS: Announcement[] = [
@@ -62,12 +77,24 @@ const Announcements = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredAnnouncements, setFilteredAnnouncements] = useState<Announcement[]>([]);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>(ANNOUNCEMENTS);
   
   const isAdmin = user?.role === 'admin';
   
+  const form = useForm<z.infer<typeof announcementSchema>>({
+    resolver: zodResolver(announcementSchema),
+    defaultValues: {
+      title: '',
+      content: '',
+      isPinned: false
+    }
+  });
+
   useEffect(() => {
     // First show pinned announcements, then sort by date
-    const sorted = [...ANNOUNCEMENTS].sort((a, b) => {
+    const sorted = [...announcements].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -83,7 +110,93 @@ const Announcements = () => {
         announcement.authorName.toLowerCase().includes(query)
       ));
     }
-  }, [searchQuery]);
+  }, [searchQuery, announcements]);
+  
+  const fetchAnnouncements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching announcements:', error);
+        toast.error('Failed to load announcements');
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        const mappedData = data.map(item => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          authorId: item.author_id,
+          authorName: 'Admin', // You would typically join with profiles table to get actual names
+          createdAt: new Date(item.created_at),
+          isPinned: item.is_pinned
+        }));
+        setAnnouncements(mappedData);
+      }
+    } catch (error) {
+      console.error('Error in fetchAnnouncements:', error);
+      toast.error('Failed to load announcements');
+    }
+  };
+  
+  useEffect(() => {
+    // Try to fetch from Supabase, but fallback to sample data if not available
+    fetchAnnouncements();
+  }, []);
+  
+  const onSubmit = async (values: z.infer<typeof announcementSchema>) => {
+    if (!user) {
+      toast.error('You must be logged in to create an announcement');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('announcements')
+        .insert([
+          {
+            title: values.title,
+            content: values.content,
+            is_pinned: values.isPinned,
+            author_id: user.id
+          }
+        ])
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Add the new announcement to the local state
+      const newAnnouncement: Announcement = {
+        id: data?.[0]?.id || `temp-${Date.now()}`,
+        title: values.title,
+        content: values.content,
+        authorId: user.id,
+        authorName: user.name || 'Unknown',
+        createdAt: new Date(),
+        isPinned: values.isPinned
+      };
+      
+      setAnnouncements(prev => [newAnnouncement, ...prev]);
+      
+      toast.success('Announcement created successfully');
+      form.reset();
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      toast.error('Failed to create announcement');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -102,7 +215,10 @@ const Announcements = () => {
         </div>
         
         {isAdmin && (
-          <Button className="mt-4 sm:mt-0 bg-family-green hover:bg-green-600">
+          <Button 
+            className="mt-4 sm:mt-0 bg-family-green hover:bg-green-600"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Create Announcement
           </Button>
@@ -160,6 +276,84 @@ const Announcements = () => {
           ))
         )}
       </div>
+      
+      {/* Create Announcement Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create Announcement</DialogTitle>
+            <DialogDescription>
+              Create a new announcement to share with all users
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter announcement title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Content</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter announcement content" 
+                        rows={5}
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="isPinned"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                    </FormControl>
+                    <FormLabel className="m-0">
+                      Pin announcement to the top
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter className="mt-6">
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="bg-family-green hover:bg-green-600"
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Announcement'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
