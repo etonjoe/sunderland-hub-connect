@@ -7,16 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from '@/integrations/supabase/client';
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from '@/lib/supabase';
 import { ForumPost, ForumCategory, ForumComment } from '@/types';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ForumPostPage = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [post, setPost] = useState<ForumPost | null>(null);
   const [category, setCategory] = useState<ForumCategory | null>(null);
   const [comments, setComments] = useState<ForumComment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const [hasLiked, setHasLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -134,8 +141,34 @@ const ForumPostPage = () => {
           createdAt: new Date(comment.created_at),
           updatedAt: new Date(comment.updated_at)
         })) : [];
+
+        // Fetch post likes count
+        const { count: likesCount, error: likesCountError } = await supabase
+          .from('forum_post_likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_id', postId);
         
-        // Format post with author data
+        if (likesCountError) {
+          console.error('Error fetching likes count:', likesCountError);
+        }
+
+        // Check if current user has liked this post
+        if (user) {
+          const { data: userLike, error: userLikeError } = await supabase
+            .from('forum_post_likes')
+            .select('id')
+            .eq('post_id', postId)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (userLikeError) {
+            console.error('Error checking if user liked post:', userLikeError);
+          }
+          
+          setHasLiked(!!userLike);
+        }
+        
+        // Format post with author data and counts
         const formattedPost: ForumPost = {
           id: postData.id,
           categoryId: postData.category_id,
@@ -146,7 +179,7 @@ const ForumPostPage = () => {
           authorAvatar: undefined,
           createdAt: new Date(postData.created_at),
           updatedAt: new Date(postData.updated_at),
-          likesCount: 0,
+          likesCount: likesCount || 0,
           commentsCount: formattedComments.length
         };
         
@@ -163,7 +196,7 @@ const ForumPostPage = () => {
     };
     
     fetchPostData();
-  }, [postId, navigate]);
+  }, [postId, navigate, user]);
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -173,6 +206,121 @@ const ForumPostPage = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!isAuthenticated || !user) {
+      toast.error('You must be logged in to comment');
+      return;
+    }
+    
+    if (!newComment.trim()) {
+      toast.error('Comment cannot be empty');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { data: commentData, error } = await supabase
+        .from('forum_comments')
+        .insert({
+          post_id: postId,
+          content: newComment.trim(),
+          author_id: user.id
+        })
+        .select('id, content, created_at, updated_at')
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Add the new comment to the list
+      const newCommentObj: ForumComment = {
+        id: commentData.id,
+        content: commentData.content,
+        authorId: user.id,
+        authorName: user.name,
+        createdAt: new Date(commentData.created_at),
+        updatedAt: new Date(commentData.updated_at)
+      };
+      
+      setComments(prevComments => [...prevComments, newCommentObj]);
+      setNewComment('');
+      
+      // Update comment count on post
+      if (post) {
+        setPost({
+          ...post,
+          commentsCount: post.commentsCount + 1
+        });
+      }
+      
+      toast.success('Comment added successfully');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Failed to add comment');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLikePost = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error('You must be logged in to like posts');
+      return;
+    }
+    
+    if (!post) return;
+    
+    setIsLiking(true);
+    
+    try {
+      if (hasLiked) {
+        // Unlike the post
+        const { error } = await supabase
+          .from('forum_post_likes')
+          .delete()
+          .eq('post_id', post.id)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+        
+        setHasLiked(false);
+        setPost({
+          ...post,
+          likesCount: Math.max(0, post.likesCount - 1)
+        });
+        
+        toast.success('Post unliked');
+      } else {
+        // Like the post
+        const { error } = await supabase
+          .from('forum_post_likes')
+          .insert({
+            post_id: post.id,
+            user_id: user.id
+          });
+        
+        if (error) throw error;
+        
+        setHasLiked(true);
+        setPost({
+          ...post,
+          likesCount: post.likesCount + 1
+        });
+        
+        toast.success('Post liked');
+      }
+    } catch (error) {
+      console.error('Error liking/unliking post:', error);
+      toast.error('Failed to like/unlike post');
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   return (
@@ -216,10 +364,16 @@ const ForumPostPage = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center text-muted-foreground">
-                <ThumbsUp className="mr-1 h-4 w-4" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`flex items-center gap-1 ${hasLiked ? 'text-blue-500' : 'text-muted-foreground'}`}
+                onClick={handleLikePost}
+                disabled={isLiking || !isAuthenticated}
+              >
+                <ThumbsUp className="h-4 w-4" />
                 <span>{post.likesCount}</span>
-              </div>
+              </Button>
               <div className="flex items-center text-muted-foreground">
                 <MessageSquare className="mr-1 h-4 w-4" />
                 <span>{comments.length}</span>
@@ -237,6 +391,31 @@ const ForumPostPage = () => {
           
           <div className="mt-8">
             <h2 className="text-xl font-semibold mb-4">Comments ({comments.length})</h2>
+            
+            {isAuthenticated ? (
+              <form onSubmit={handleCommentSubmit} className="mb-6">
+                <Textarea 
+                  placeholder="Share your thoughts..." 
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="mb-2 min-h-24"
+                />
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || !newComment.trim()}
+                  className="ml-auto block"
+                >
+                  {isSubmitting ? 'Posting...' : 'Post Comment'}
+                </Button>
+              </form>
+            ) : (
+              <Card className="p-4 mb-6 bg-muted">
+                <p className="text-center text-muted-foreground">
+                  Please <Link to="/login" className="text-blue-500 hover:underline">log in</Link> to post a comment.
+                </p>
+              </Card>
+            )}
+            
             <Separator className="my-4" />
             
             {comments.length === 0 ? (

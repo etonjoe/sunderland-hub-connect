@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -8,10 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
 import { Resource } from '@/types';
-import { File, FileText, FileImage, FileAudio, Search, Download, Upload, Lock } from 'lucide-react';
+import { File, FileText, FileImage, FileAudio, Search, Download, Lock } from 'lucide-react';
+import CreateResource from '@/components/resources/CreateResource';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
-// Sample data
-const RESOURCES: Resource[] = [
+const SAMPLE_RESOURCES: Resource[] = [
   {
     id: '1',
     title: 'Family Tree 2023',
@@ -89,23 +90,94 @@ const ResourceTypeIcon = ({ fileType }: { fileType: string }) => {
 const Resources = () => {
   const { user, isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredResources, setFilteredResources] = useState<Resource[]>(RESOURCES);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const isPremium = user?.isPremium || false;
   
   useEffect(() => {
+    const fetchResources = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('resources')
+          .select(`
+            id,
+            title,
+            description,
+            file_url,
+            file_type,
+            author_id,
+            is_premium,
+            created_at
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data && data.length > 0) {
+          const authorIds = [...new Set(data.map(resource => resource.author_id))];
+          
+          const { data: authorsData, error: authorsError } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .in('id', authorIds);
+          
+          if (authorsError) {
+            console.error('Error fetching authors:', authorsError);
+          }
+          
+          const authorMap = {};
+          authorsData?.forEach(author => {
+            authorMap[author.id] = author.name;
+          });
+          
+          const formattedResources: Resource[] = data.map(resource => ({
+            id: resource.id,
+            title: resource.title,
+            description: resource.description,
+            fileUrl: resource.file_url,
+            fileType: resource.file_type,
+            authorId: resource.author_id,
+            authorName: authorMap[resource.author_id] || 'Unknown User',
+            createdAt: new Date(resource.created_at),
+            isPremium: resource.is_premium
+          }));
+          
+          setResources(formattedResources);
+        } else {
+          setResources(SAMPLE_RESOURCES);
+        }
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+        toast.error('Failed to load resources');
+        setResources(SAMPLE_RESOURCES);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (isAuthenticated && isPremium) {
+      fetchResources();
+    }
+  }, [isAuthenticated, isPremium]);
+  
+  useEffect(() => {
     if (searchQuery.trim() === '') {
-      setFilteredResources(RESOURCES);
+      setFilteredResources(resources);
     } else {
       const query = searchQuery.toLowerCase();
-      setFilteredResources(RESOURCES.filter(resource => 
+      setFilteredResources(resources.filter(resource => 
         resource.title.toLowerCase().includes(query) || 
         resource.description.toLowerCase().includes(query) ||
         resource.authorName.toLowerCase().includes(query) ||
         resource.fileType.toLowerCase().includes(query)
       ));
     }
-  }, [searchQuery]);
+  }, [searchQuery, resources]);
   
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -113,6 +185,29 @@ const Resources = () => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleResourceCreated = () => {
+    toast.success('Resource created successfully!');
+    if (isAuthenticated && isPremium) {
+      setIsLoading(true);
+      // Refetch logic here similar to fetchResources
+    }
+  };
+  
+  const handleDownload = (resource: Resource) => {
+    if (!isAuthenticated) {
+      toast.error('You must be logged in to download resources');
+      return;
+    }
+    
+    if (resource.isPremium && !isPremium) {
+      toast.error('This resource is only available to premium members');
+      return;
+    }
+    
+    window.open(resource.fileUrl, '_blank');
+    toast.success('Download started');
   };
   
   if (!isAuthenticated) {
@@ -141,10 +236,7 @@ const Resources = () => {
     <div className="container py-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <h1 className="text-3xl font-bold mb-4 sm:mb-0">Resources</h1>
-        <Button className="bg-family-green hover:bg-green-600">
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Resource
-        </Button>
+        <CreateResource onResourceCreated={handleResourceCreated} />
       </div>
       
       <div className="mb-6 relative">
@@ -166,7 +258,30 @@ const Resources = () => {
         </TabsList>
         
         <TabsContent value="all" className="space-y-6">
-          {filteredResources.length === 0 ? (
+          {isLoading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <Card key={i} className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start gap-2">
+                      <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
+                      <div>
+                        <div className="h-5 w-40 bg-gray-200 rounded animate-pulse mb-1" />
+                        <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : filteredResources.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No resources found matching your search.</p>
             </div>
@@ -192,7 +307,11 @@ const Resources = () => {
                     <div className="text-xs text-muted-foreground">
                       Uploaded by {resource.authorName}
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDownload(resource)}
+                    >
                       <Download className="mr-2 h-3 w-3" />
                       Download
                     </Button>

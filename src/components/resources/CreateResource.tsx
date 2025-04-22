@@ -8,10 +8,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { resourceSchema, type ResourceFormValues } from './schema';
 import { FileUploadField } from './FileUploadField';
 import { useResourceUpload } from './useResourceUpload';
+import { toast } from 'sonner';
 
 interface CreateResourceProps {
   onResourceCreated?: () => void;
@@ -36,14 +37,20 @@ const CreateResource = ({ onResourceCreated }: CreateResourceProps) => {
   });
 
   const onSubmit = async (data: ResourceFormValues) => {
-    await uploadResource(data);
+    try {
+      await uploadResource(data);
+      toast.success('Resource uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading resource:', error);
+      toast.error('Failed to upload resource');
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="bg-family-green hover:bg-green-600">
-          <Plus className="mr-2 h-4 w-4" />
+          <Upload className="mr-2 h-4 w-4" />
           Upload Resource
         </Button>
       </DialogTrigger>
