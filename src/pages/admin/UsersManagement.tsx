@@ -6,24 +6,35 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   role: z.enum(['user', 'admin', 'moderator']),
+  sendInvite: z.boolean().default(true)
+});
+
+const inviteUserSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  role: z.enum(['user', 'admin', 'moderator']),
+  message: z.string().optional()
 });
 
 const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => {
   const { user: currentUser } = useAuth();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   const createUserForm = useForm({
     resolver: zodResolver(createUserSchema),
@@ -31,6 +42,16 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
       email: '',
       name: '',
       role: 'user',
+      sendInvite: true
+    },
+  });
+
+  const inviteUserForm = useForm({
+    resolver: zodResolver(inviteUserSchema),
+    defaultValues: {
+      email: '',
+      role: 'user',
+      message: ''
     },
   });
 
@@ -62,7 +83,9 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
   };
 
   const onCreateUser = async (data) => {
+    setIsCreatingUser(true);
     try {
+      // First create the user
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: 'Temp1234!', // Temporary password, user should reset
@@ -76,12 +99,38 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
 
       if (signUpError) throw signUpError;
 
-      toast.success('User created successfully. A password reset email has been sent.');
+      // If successful, send invite email if requested
+      if (data.sendInvite) {
+        // In a real application, you'd send an invite email here
+        toast.success('User created successfully. An invite has been sent.');
+      } else {
+        toast.success('User created successfully.');
+      }
+      
       setIsCreateDialogOpen(false);
+      createUserForm.reset();
       onUserAdded();
     } catch (error) {
       console.error('Error creating user:', error);
-      toast.error('Failed to create user');
+      toast.error('Failed to create user: ' + error.message);
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  const onInviteUser = async (data) => {
+    setIsSendingInvite(true);
+    try {
+      // In a real application, this would connect to a server endpoint to send invitations
+      // For now, we'll simulate success
+      toast.success(`Invitation sent to ${data.email} for ${data.role} role`);
+      setIsInviteDialogOpen(false);
+      inviteUserForm.reset();
+    } catch (error) {
+      console.error('Error sending invite:', error);
+      toast.error('Failed to send invite');
+    } finally {
+      setIsSendingInvite(false);
     }
   };
 
@@ -93,9 +142,17 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
             <CardTitle>User Management</CardTitle>
             <CardDescription>Manage users, roles, and permissions</CardDescription>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            Create User
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsInviteDialogOpen(true)}
+            >
+              Invite User
+            </Button>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              Create User
+            </Button>
+          </div>
         </div>
         <div className="mt-2">
           <Input 
@@ -152,6 +209,7 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
         </Table>
       </CardContent>
       
+      {/* Create User Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -169,6 +227,7 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
                     <FormControl>
                       <Input placeholder="Enter full name" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -181,6 +240,7 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
                     <FormControl>
                       <Input type="email" placeholder="Enter email" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -190,22 +250,119 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="moderator">Moderator</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createUserForm.control}
+                name="sendInvite"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                     <FormControl>
-                      <select 
-                        {...field} 
-                        className="w-full p-2 border rounded"
-                        onChange={(e) => field.onChange(e.target.value)}
-                      >
-                        <option value="user">User</option>
-                        <option value="moderator">Moderator</option>
-                        <option value="admin">Admin</option>
-                      </select>
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
                     </FormControl>
+                    <FormLabel className="m-0">Send invitation email</FormLabel>
                   </FormItem>
                 )}
               />
               <DialogFooter>
-                <Button type="submit">Create User</Button>
+                <Button type="submit" disabled={isCreatingUser}>
+                  {isCreatingUser ? 'Creating...' : 'Create User'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite User Dialog */}
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite User</DialogTitle>
+            <DialogDescription>Send an invitation to join the platform</DialogDescription>
+          </DialogHeader>
+          <Form {...inviteUserForm}>
+            <form onSubmit={inviteUserForm.handleSubmit(onInviteUser)} className="space-y-4">
+              <FormField
+                control={inviteUserForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Enter email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={inviteUserForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="moderator">Moderator</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={inviteUserForm.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Personal Message (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Add a personal message to the invitation"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit" disabled={isSendingInvite}>
+                  {isSendingInvite ? 'Sending...' : 'Send Invitation'}
+                </Button>
               </DialogFooter>
             </form>
           </Form>

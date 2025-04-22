@@ -9,122 +9,108 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/contexts/AuthContext';
 import { ForumCategory, ForumPost } from '@/types';
-import { MessageSquare, ThumbsUp, Search, Plus } from 'lucide-react';
-
-// Sample data
-const CATEGORIES: ForumCategory[] = [
-  {
-    id: '1',
-    name: 'General Discussion',
-    description: 'General family discussions and topics',
-    postsCount: 15
-  },
-  {
-    id: '2',
-    name: 'Events & Meetups',
-    description: 'Upcoming family events and gatherings',
-    postsCount: 8
-  },
-  {
-    id: '3',
-    name: 'Support & Advice',
-    description: 'Ask for help and share advice',
-    postsCount: 12
-  },
-  {
-    id: '4',
-    name: 'Recipes & Cooking',
-    description: 'Share family recipes and cooking tips',
-    postsCount: 10
-  },
-  {
-    id: '5',
-    name: 'Family History',
-    description: 'Discussions about family history and genealogy',
-    postsCount: 5
-  }
-];
-
-const POSTS: ForumPost[] = [
-  {
-    id: '1',
-    categoryId: '1',
-    title: 'Welcome to the SunderlandFamily Hub!',
-    content: 'Welcome everyone to our new family hub! Let\'s use this space to stay connected.',
-    authorId: '1',
-    authorName: 'Admin User',
-    createdAt: new Date('2023-01-15'),
-    updatedAt: new Date('2023-01-15'),
-    likesCount: 25,
-    commentsCount: 12
-  },
-  {
-    id: '2',
-    categoryId: '2',
-    title: 'Summer Reunion Planning Thread',
-    content: 'Let\'s start planning our summer reunion for July. Who\'s available?',
-    authorId: '3',
-    authorName: 'Premium User',
-    createdAt: new Date('2023-02-20'),
-    updatedAt: new Date('2023-02-21'),
-    likesCount: 18,
-    commentsCount: 32
-  },
-  {
-    id: '3',
-    categoryId: '3',
-    title: 'Need advice for a family member',
-    content: 'I have a situation with a relative and need some advice from the family.',
-    authorId: '2',
-    authorName: 'Regular User',
-    createdAt: new Date('2023-03-05'),
-    updatedAt: new Date('2023-03-05'),
-    likesCount: 7,
-    commentsCount: 15
-  },
-  {
-    id: '4',
-    categoryId: '4',
-    title: 'Grandma\'s secret apple pie recipe',
-    content: 'I finally got permission to share Grandma\'s famous apple pie recipe!',
-    authorId: '3',
-    authorName: 'Premium User',
-    createdAt: new Date('2023-03-10'),
-    updatedAt: new Date('2023-03-10'),
-    likesCount: 42,
-    commentsCount: 8
-  },
-  {
-    id: '5',
-    categoryId: '5',
-    title: 'Old family photos discovered',
-    content: 'I found a box of old family photos from the 1940s. Would love to share!',
-    authorId: '1',
-    authorName: 'Admin User',
-    createdAt: new Date('2023-04-15'),
-    updatedAt: new Date('2023-04-15'),
-    likesCount: 31,
-    commentsCount: 23
-  }
-];
+import { MessageSquare, ThumbsUp, Search } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import CreateForumPost from '@/components/forum/CreateForumPost';
+import CreateForumCategory from '@/components/forum/CreateForumCategory';
 
 const Forum = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredPosts, setFilteredPosts] = useState<ForumPost[]>(POSTS);
+  const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [categories, setCategories] = useState<ForumCategory[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [filteredPosts, setFilteredPosts] = useState<ForumPost[]>([]);
+  
+  const fetchPosts = async () => {
+    setIsLoadingPosts(true);
+    try {
+      const { data, error } = await supabase
+        .from('forum_posts')
+        .select(`
+          id,
+          title,
+          content,
+          created_at,
+          updated_at,
+          category_id,
+          author_id,
+          profiles:profiles!author_id(name)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Transform data into ForumPost objects
+      const formattedPosts: ForumPost[] = data.map(post => ({
+        id: post.id,
+        categoryId: post.category_id,
+        title: post.title,
+        content: post.content,
+        authorId: post.author_id,
+        authorName: post.profiles?.name || 'Unknown User',
+        authorAvatar: undefined,
+        createdAt: new Date(post.created_at),
+        updatedAt: new Date(post.updated_at),
+        likesCount: 0, // We'd need another query to get this
+        commentsCount: 0 // We'd need another query to get this
+      }));
+      
+      setPosts(formattedPosts);
+      setFilteredPosts(formattedPosts);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      toast.error('Failed to load forum posts');
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  };
+  
+  const fetchCategories = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const { data, error } = await supabase
+        .from('forum_categories')
+        .select('id, name, description');
+      
+      if (error) throw error;
+      
+      // Transform data into ForumCategory objects
+      const formattedCategories: ForumCategory[] = data.map(category => ({
+        id: category.id,
+        name: category.name,
+        description: category.description,
+        postsCount: 0 // We'd need a count query to get this
+      }));
+      
+      setCategories(formattedCategories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast.error('Failed to load forum categories');
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchPosts();
+    fetchCategories();
+  }, []);
   
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      setFilteredPosts(POSTS);
+      setFilteredPosts(posts);
     } else {
       const query = searchQuery.toLowerCase();
-      setFilteredPosts(POSTS.filter(post => 
+      setFilteredPosts(posts.filter(post => 
         post.title.toLowerCase().includes(query) || 
         post.content.toLowerCase().includes(query) ||
         post.authorName.toLowerCase().includes(query)
       ));
     }
-  }, [searchQuery]);
+  }, [searchQuery, posts]);
   
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -134,16 +120,26 @@ const Forum = () => {
     });
   };
   
+  const handlePostCreated = () => {
+    fetchPosts();
+  };
+
+  const handleCategoryCreated = () => {
+    fetchCategories();
+  };
+  
   return (
     <div className="container py-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <h1 className="text-3xl font-bold mb-4 sm:mb-0">Community Forum</h1>
-        {isAuthenticated && (
-          <Button className="bg-family-green hover:bg-green-600">
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Post
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {user?.role === 'admin' && (
+            <CreateForumCategory onCategoryCreated={handleCategoryCreated} />
+          )}
+          {isAuthenticated && (
+            <CreateForumPost onPostCreated={handlePostCreated} />
+          )}
+        </div>
       </div>
       
       <div className="mb-6 relative">
@@ -163,9 +159,18 @@ const Forum = () => {
         </TabsList>
         
         <TabsContent value="posts" className="space-y-6">
-          {filteredPosts.length === 0 ? (
+          {isLoadingPosts ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading posts...</p>
+            </div>
+          ) : filteredPosts.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No posts found matching your search.</p>
+              {isAuthenticated && (
+                <div className="mt-4">
+                  <CreateForumPost onPostCreated={handlePostCreated} />
+                </div>
+              )}
             </div>
           ) : (
             filteredPosts.map(post => (
@@ -178,7 +183,7 @@ const Forum = () => {
                       </Link>
                     </CardTitle>
                     <Badge variant="outline" className="ml-2">
-                      {CATEGORIES.find(c => c.id === post.categoryId)?.name}
+                      {categories.find(c => c.id === post.categoryId)?.name || 'Uncategorized'}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -206,33 +211,55 @@ const Forum = () => {
         </TabsContent>
         
         <TabsContent value="categories">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {CATEGORIES.map(category => (
-              <Card key={category.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-family-green">
-                    <Link to={`/forum/category/${category.id}`} className="hover:underline">
-                      {category.name}
-                    </Link>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{category.description}</p>
-                </CardContent>
-                <Separator />
-                <CardFooter className="pt-3 flex justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    {category.postsCount} posts
-                  </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to={`/forum/category/${category.id}`}>
-                      View
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Forum Categories</h2>
+            {user?.role === 'admin' && (
+              <CreateForumCategory onCategoryCreated={handleCategoryCreated} />
+            )}
           </div>
+          
+          {isLoadingCategories ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading categories...</p>
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No categories found. Create a category to get started.</p>
+              {user?.role === 'admin' && (
+                <div className="mt-4">
+                  <CreateForumCategory onCategoryCreated={handleCategoryCreated} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {categories.map(category => (
+                <Card key={category.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-semibold text-family-green">
+                      <Link to={`/forum/category/${category.id}`} className="hover:underline">
+                        {category.name}
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{category.description}</p>
+                  </CardContent>
+                  <Separator />
+                  <CardFooter className="pt-3 flex justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      {category.postsCount} posts
+                    </div>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/forum/category/${category.id}`}>
+                        View
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

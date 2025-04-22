@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +14,7 @@ import ActivityLog from './admin/ActivityLog';
 import ContentManagement from './admin/ContentManagement';
 import AnnouncementManagement from './admin/AnnouncementManagement';
 import ReportsManagement from './admin/ReportsManagement';
+import TeamsManagement from './admin/TeamsManagement';
 import AccessDenied from './admin/AccessDenied';
 import { ADMIN_USERS } from './admin/AdminData';
 import { toast } from 'sonner';
@@ -176,9 +178,7 @@ const Admin = () => {
             </TabsContent>
 
             <TabsContent value="teams">
-              <div className="text-center py-12 text-muted-foreground">
-                Teams management coming soon
-              </div>
+              <TeamsManagement />
             </TabsContent>
           </>
         )}
