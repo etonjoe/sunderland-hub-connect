@@ -6,6 +6,7 @@ import SearchBar from '@/features/forum/components/SearchBar';
 import PostCard from '@/features/forum/components/PostCard';
 import CategoryCard from '@/features/forum/components/CategoryCard';
 import { useForumData } from '@/features/forum/hooks/useForumData';
+import { ForumPost } from '@/types'; // Import from global types
 
 const Forum = () => {
   const { isAuthenticated, user } = useAuth();

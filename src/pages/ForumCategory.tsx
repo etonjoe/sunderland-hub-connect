@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -34,7 +33,6 @@ const ForumCategoryPage = () => {
 
       setIsLoading(true);
       try {
-        // Fetch category data
         const { data: categoryData, error: categoryError } = await supabase
           .from('forum_categories')
           .select('id, name, description')
@@ -48,15 +46,13 @@ const ForumCategoryPage = () => {
           return;
         }
         
-        // Format category
         const formattedCategory: ForumCategoryType = {
           id: categoryData.id,
           name: categoryData.name,
           description: categoryData.description,
-          postsCount: 0 // Will be updated after fetching posts
+          postsCount: 0
         };
         
-        // Fetch posts for this category
         const { data: postsData, error: postsError } = await supabase
           .from('forum_posts')
           .select(`
@@ -77,10 +73,8 @@ const ForumCategoryPage = () => {
           setPosts([]);
           setFilteredPosts([]);
         } else {
-          // Get all unique author IDs
           const authorIds = [...new Set(postsData.map(post => post.author_id))];
           
-          // Fetch authors data
           const { data: authorsData, error: authorsError } = await supabase
             .from('profiles')
             .select('id, name')
@@ -90,13 +84,11 @@ const ForumCategoryPage = () => {
             console.error('Error fetching authors:', authorsError);
           }
           
-          // Create a map of author IDs to author names
           const authorMap = {};
           authorsData?.forEach(author => {
             authorMap[author.id] = author.name;
           });
           
-          // Format posts with author names
           const formattedPosts: ForumPost[] = postsData.map(post => ({
             id: post.id,
             categoryId: post.category_id,
@@ -111,7 +103,6 @@ const ForumCategoryPage = () => {
             commentsCount: 0
           }));
           
-          // Update category with post count
           formattedCategory.postsCount = formattedPosts.length;
           
           setPosts(formattedPosts);
@@ -173,10 +164,8 @@ const ForumCategoryPage = () => {
       
       if (error) throw error;
       
-      // Get all unique author IDs
       const authorIds = [...new Set(data.map(post => post.author_id))];
       
-      // Fetch authors data
       const { data: authorsData, error: authorsError } = await supabase
         .from('profiles')
         .select('id, name')
@@ -184,13 +173,11 @@ const ForumCategoryPage = () => {
       
       if (authorsError) throw authorsError;
       
-      // Create a map of author IDs to author names
       const authorMap = {};
       authorsData.forEach(author => {
         authorMap[author.id] = author.name;
       });
       
-      // Format posts with author names
       const formattedPosts: ForumPost[] = data.map(post => ({
         id: post.id,
         categoryId: post.category_id,
@@ -208,7 +195,6 @@ const ForumCategoryPage = () => {
       setPosts(formattedPosts);
       setFilteredPosts(formattedPosts);
       
-      // Update category with post count if category exists
       if (category) {
         setCategory({
           ...category,
