@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,7 +52,7 @@ const Admin = () => {
           lastLogin: 'Not available',
           createdAt: profile.created_at ? new Date(profile.created_at) : new Date()
         }));
-        setUsers(userList);
+        setUsers(userList as User[]);
       }
     } catch (err) {
       console.error('Error fetching users:', err);
