@@ -8,28 +8,24 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "sonner";
-import { Plus, Upload } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { Plus } from "lucide-react";
+import { resourceSchema, type ResourceFormValues } from './schema';
+import { FileUploadField } from './FileUploadField';
+import { useResourceUpload } from './useResourceUpload';
 
-const resourceSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  isPremium: z.boolean().default(false),
-  file: z.any()
-    .refine(file => file?.length === 1, "Please select a file")
-    .transform(file => file[0]),
-});
+interface CreateResourceProps {
+  onResourceCreated?: () => void;
+}
 
-const CreateResource = ({ onResourceCreated }) => {
-  const { user } = useAuth();
+const CreateResource = ({ onResourceCreated }: CreateResourceProps) => {
   const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const { uploadResource, isSubmitting } = useResourceUpload(() => {
+    form.reset();
+    setOpen(false);
+    if (onResourceCreated) onResourceCreated();
+  });
 
-  const form = useForm({
+  const form = useForm<ResourceFormValues>({
     resolver: zodResolver(resourceSchema),
     defaultValues: {
       title: "",
@@ -39,65 +35,8 @@ const CreateResource = ({ onResourceCreated }) => {
     },
   });
 
-  const onSubmit = async (data) => {
-    if (!user) {
-      toast.error('You must be logged in to upload resources');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setUploadProgress(0);
-    
-    try {
-      const file = data.file;
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-      
-      // Track upload progress manually
-      let uploadProgress = 0;
-      const fileSize = file.size;
-      
-      // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('resources')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-      
-      if (uploadError) throw uploadError;
-      
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('resources')
-        .getPublicUrl(filePath);
-      
-      // Create resource record in database
-      const { error: dbError } = await supabase
-        .from('resources')
-        .insert({
-          title: data.title,
-          description: data.description,
-          is_premium: data.isPremium,
-          file_url: publicUrl,
-          file_type: fileExt,
-          author_id: user.id
-        });
-      
-      if (dbError) throw dbError;
-      
-      toast.success('Resource uploaded successfully');
-      form.reset();
-      setOpen(false);
-      if (onResourceCreated) onResourceCreated();
-    } catch (error) {
-      console.error('Error uploading resource:', error);
-      toast.error('Failed to upload resource');
-    } finally {
-      setIsSubmitting(false);
-      setUploadProgress(0);
-    }
+  const onSubmit = async (data: ResourceFormValues) => {
+    await uploadResource(data);
   };
 
   return (
@@ -147,33 +86,7 @@ const CreateResource = ({ onResourceCreated }) => {
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="file"
-              render={({ field: { value, onChange, ...fieldProps } }) => (
-                <FormItem>
-                  <FormLabel>File</FormLabel>
-                  <FormControl>
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:bg-gray-50 transition-colors">
-                      <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground mb-1">Click to select or drag and drop</p>
-                      <p className="text-xs text-muted-foreground">PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG</p>
-                      <Input
-                        {...fieldProps}
-                        id="file-upload"
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => onChange(e.target.files)}
-                      />
-                      {value && value[0] && (
-                        <p className="mt-2 text-sm font-medium">{value[0].name}</p>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FileUploadField form={form} />
             
             <FormField
               control={form.control}
@@ -193,12 +106,6 @@ const CreateResource = ({ onResourceCreated }) => {
                 </FormItem>
               )}
             />
-
-            {uploadProgress > 0 && uploadProgress < 100 && (
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div className="bg-family-green h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
-              </div>
-            )}
             
             <DialogFooter>
               <DialogClose asChild>
