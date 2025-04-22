@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Forum from "./pages/Forum";
+import ForumPost from "./pages/ForumPost";
 import Resources from "./pages/Resources";
 import Chat from "./pages/Chat";
 import Announcements from "./pages/Announcements";
@@ -80,6 +81,11 @@ const AppRoutes = () => {
           <Route path="/forum" element={
             <ProtectedRoute>
               <Forum />
+            </ProtectedRoute>
+          } />
+          <Route path="/forum/post/:postId" element={
+            <ProtectedRoute>
+              <ForumPost />
             </ProtectedRoute>
           } />
           <Route path="/resources" element={
