@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,7 @@ import { resourceSchema, type ResourceFormValues } from './schema';
 import { FileUploadField } from './FileUploadField';
 import { useResourceUpload } from './useResourceUpload';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CreateResourceProps {
   onResourceCreated?: () => void;
@@ -25,6 +25,8 @@ const CreateResource = ({ onResourceCreated }: CreateResourceProps) => {
     setOpen(false);
     if (onResourceCreated) onResourceCreated();
   });
+
+  const { user, isAuthenticated } = useAuth();
 
   const form = useForm<ResourceFormValues>({
     resolver: zodResolver(resourceSchema),
@@ -46,10 +48,16 @@ const CreateResource = ({ onResourceCreated }: CreateResourceProps) => {
     }
   };
 
+  const canUpload = isAuthenticated && (user?.isPremium ?? true);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-family-green hover:bg-green-600">
+        <Button
+          className="bg-family-green hover:bg-green-600"
+          disabled={!canUpload}
+          title={!canUpload ? "You must be signed in" + (user && !user.isPremium ? " and a premium member" : "") + " to upload resources." : undefined}
+        >
           <Upload className="mr-2 h-4 w-4" />
           Upload Resource
         </Button>
