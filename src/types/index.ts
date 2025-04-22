@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   name: string;
@@ -27,7 +26,7 @@ export interface ForumCategory {
 
 export interface ForumPost {
   id: string;
-  categoryId?: string;  // Making this optional to match usage
+  categoryId?: string;  // Making categoryId optional to match usage across all components
   title: string;
   content: string;
   authorId: string;

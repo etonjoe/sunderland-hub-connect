@@ -53,21 +53,45 @@ const PostCard = ({ post, categories, formatDate }: PostCardProps) => {
     const { data, error } = await supabase
       .from('forum_comments')
       .select(`
-        id, author_id, content, created_at,
-        profiles:author_id(name)
+        id, author_id, content, created_at
       `)
       .eq('post_id', post.id)
       .order('created_at', { ascending: true });
+    
     if (error) {
       toast.error('Failed to load comments');
       setComments([]);
       return;
     }
-    const mapped = data.map((c) => ({
+    
+    // Get all author IDs
+    const authorIds = data.map(comment => comment.author_id);
+    
+    // Fetch author names
+    const { data: authorData, error: authorError } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .in('id', authorIds);
+    
+    if (authorError) {
+      console.error('Error fetching author data:', authorError);
+    }
+    
+    // Create a map of author IDs to names
+    const authorMap: Record<string, string> = {};
+    if (authorData) {
+      authorData.forEach(author => {
+        authorMap[author.id] = author.name;
+      });
+    }
+    
+    // Map comments with author names
+    const mappedComments = data.map((c) => ({
       ...c,
-      author_name: c.profiles?.name || 'Unknown',
+      author_name: authorMap[c.author_id] || 'Unknown',
     }));
-    setComments(mapped);
+    
+    setComments(mappedComments);
   };
 
   useEffect(() => {

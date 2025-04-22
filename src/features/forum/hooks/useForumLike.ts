@@ -11,7 +11,9 @@ export const useForumLike = (postId: string) => {
 
   useEffect(() => {
     if (!postId) return;
+    
     let ignore = false;
+    
     const fetchLikes = async () => {
       // Count likes
       const { count } = await supabase
