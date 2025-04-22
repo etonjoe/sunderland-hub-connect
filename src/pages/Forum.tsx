@@ -27,7 +27,8 @@ const Forum = () => {
   const fetchPosts = async () => {
     setIsLoadingPosts(true);
     try {
-      const { data, error } = await supabase
+      // First fetch posts
+      const { data: postsData, error: postsError } = await supabase
         .from('forum_posts')
         .select(`
           id,
@@ -36,21 +37,35 @@ const Forum = () => {
           created_at,
           updated_at,
           category_id,
-          author_id,
-          profiles:profiles!author_id(name)
+          author_id
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (postsError) throw postsError;
       
-      // Transform data into ForumPost objects
-      const formattedPosts: ForumPost[] = data.map(post => ({
+      // Then fetch author names separately
+      const authorIds = [...new Set(postsData.map(post => post.author_id))];
+      const { data: authorsData, error: authorsError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', authorIds);
+      
+      if (authorsError) throw authorsError;
+      
+      // Create a map of author IDs to names for quick lookup
+      const authorMap = {};
+      authorsData.forEach(author => {
+        authorMap[author.id] = author.name;
+      });
+      
+      // Transform data into ForumPost objects with author names from the map
+      const formattedPosts: ForumPost[] = postsData.map(post => ({
         id: post.id,
         categoryId: post.category_id,
         title: post.title,
         content: post.content,
         authorId: post.author_id,
-        authorName: post.profiles?.name || 'Unknown User',
+        authorName: authorMap[post.author_id] || 'Unknown User',
         authorAvatar: undefined,
         createdAt: new Date(post.created_at),
         updatedAt: new Date(post.updated_at),

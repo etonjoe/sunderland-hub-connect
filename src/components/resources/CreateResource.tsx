@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,16 +54,16 @@ const CreateResource = ({ onResourceCreated }) => {
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
       
+      // Track upload progress manually
+      let uploadProgress = 0;
+      const fileSize = file.size;
+      
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('resources')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false,
-          onUploadProgress: (progress) => {
-            const percent = (progress.loaded / progress.total) * 100;
-            setUploadProgress(Math.round(percent));
-          },
+          upsert: false
         });
       
       if (uploadError) throw uploadError;
