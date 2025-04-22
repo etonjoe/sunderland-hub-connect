@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -5,12 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from '@/lib/supabase';
-import { ForumPost, ForumCategory as ForumCategoryType } from '@/types';
+import { ForumPost as GlobalForumPost, ForumCategory as ForumCategoryType } from '@/types';
 import { toast } from 'sonner';
 import PostCard from '@/features/forum/components/PostCard';
 import SearchBar from '@/features/forum/components/SearchBar';
 import ForumHeader from '@/features/forum/components/ForumHeader';
 import { useAuth } from '@/contexts/AuthContext';
+
+// Local type that matches how we're using it
+type ForumPost = GlobalForumPost;
 
 const ForumCategoryPage = () => {
   const { categoryId } = useParams();
