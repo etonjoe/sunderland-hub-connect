@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { ForumPost, ForumCategory as ForumCategoryType } from '@/types';
 import { toast } from 'sonner';
 import PostCard from '@/features/forum/components/PostCard';
