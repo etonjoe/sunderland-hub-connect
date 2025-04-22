@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -6,27 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from '@/lib/supabase';
-import { ForumPost as GlobalForumPost, ForumCategory as ForumCategoryType } from '@/types';
+import { ForumPost, ForumCategory as ForumCategoryType } from '@/types';
 import { toast } from 'sonner';
 import PostCard from '@/features/forum/components/PostCard';
 import SearchBar from '@/features/forum/components/SearchBar';
 import ForumHeader from '@/features/forum/components/ForumHeader';
 import { useAuth } from '@/contexts/AuthContext';
-
-// Local type definition
-type ForumPost = {
-  id: string;
-  categoryId?: string;  // Made explicitly optional here to match global type
-  title: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  likesCount: number;
-  commentsCount: number;
-};
 
 const ForumCategoryPage = () => {
   const { categoryId } = useParams();

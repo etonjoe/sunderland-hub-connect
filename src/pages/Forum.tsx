@@ -6,22 +6,7 @@ import SearchBar from '@/features/forum/components/SearchBar';
 import PostCard from '@/features/forum/components/PostCard';
 import CategoryCard from '@/features/forum/components/CategoryCard';
 import { useForumData } from '@/features/forum/hooks/useForumData';
-import { ForumPost as GlobalForumPost } from '@/types'; // Renamed import to avoid conflicts
-
-// Local type definition
-type ForumPost = {
-  id: string;
-  categoryId?: string;  // Made explicitly optional here to match global type
-  title: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  likesCount: number;
-  commentsCount: number;
-};
+import { ForumPost } from '@/types';
 
 const Forum = () => {
   const { isAuthenticated, user } = useAuth();
