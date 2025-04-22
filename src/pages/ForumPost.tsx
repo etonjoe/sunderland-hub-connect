@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MessageSquare, ThumbsUp } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,21 @@ import { toast } from 'sonner';
 
 const ForumPostPage = () => {
   const { postId } = useParams();
+  const navigate = useNavigate();
   const [post, setPost] = useState<ForumPost | null>(null);
   const [category, setCategory] = useState<ForumCategory | null>(null);
   const [comments, setComments] = useState<ForumComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     const fetchPostData = async () => {
+      if (!postId) {
+        setNotFound(true);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         // Fetch post data
@@ -37,7 +45,18 @@ const ForumPostPage = () => {
           .eq('id', postId)
           .single();
         
-        if (postError) throw postError;
+        if (postError) {
+          console.error('Error fetching post:', postError);
+          setNotFound(true);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!postData) {
+          setNotFound(true);
+          setIsLoading(false);
+          return;
+        }
         
         // Fetch author data
         const { data: authorData, error: authorError } = await supabase
@@ -46,7 +65,9 @@ const ForumPostPage = () => {
           .eq('id', postData.author_id)
           .single();
         
-        if (authorError) throw authorError;
+        if (authorError) {
+          console.error('Error fetching author:', authorError);
+        }
         
         // Fetch category data
         if (postData.category_id) {
@@ -79,34 +100,40 @@ const ForumPostPage = () => {
           .eq('post_id', postId)
           .order('created_at', { ascending: true });
         
-        if (commentsError) throw commentsError;
+        if (commentsError) {
+          console.error('Error fetching comments:', commentsError);
+        }
         
         // Get all unique author IDs from comments
-        const commentAuthorIds = [...new Set(commentsData.map(comment => comment.author_id))];
+        const commentAuthorIds = commentsData ? [...new Set(commentsData.map(comment => comment.author_id))] : [];
         
         // Fetch comment authors data
-        const { data: commentAuthorsData, error: commentAuthorsError } = await supabase
-          .from('profiles')
-          .select('id, name')
-          .in('id', commentAuthorIds);
-        
-        if (commentAuthorsError) throw commentAuthorsError;
-        
-        // Create a map of author IDs to author names
         const authorMap = {};
-        commentAuthorsData?.forEach(author => {
-          authorMap[author.id] = author.name;
-        });
+        if (commentAuthorIds.length > 0) {
+          const { data: commentAuthorsData, error: commentAuthorsError } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .in('id', commentAuthorIds);
+          
+          if (commentAuthorsError) {
+            console.error('Error fetching comment authors:', commentAuthorsError);
+          }
+          
+          // Create a map of author IDs to author names
+          commentAuthorsData?.forEach(author => {
+            authorMap[author.id] = author.name;
+          });
+        }
         
         // Format comments with author names
-        const formattedComments = commentsData.map(comment => ({
+        const formattedComments = commentsData ? commentsData.map(comment => ({
           id: comment.id,
           content: comment.content,
           authorId: comment.author_id,
           authorName: authorMap[comment.author_id] || 'Unknown User',
           createdAt: new Date(comment.created_at),
           updatedAt: new Date(comment.updated_at)
-        }));
+        })) : [];
         
         // Format post with author data
         const formattedPost: ForumPost = {
@@ -115,7 +142,7 @@ const ForumPostPage = () => {
           title: postData.title,
           content: postData.content,
           authorId: postData.author_id,
-          authorName: authorData.name || 'Unknown User',
+          authorName: authorData?.name || 'Unknown User',
           authorAvatar: undefined,
           createdAt: new Date(postData.created_at),
           updatedAt: new Date(postData.updated_at),
@@ -125,18 +152,18 @@ const ForumPostPage = () => {
         
         setPost(formattedPost);
         setComments(formattedComments);
+        setNotFound(false);
       } catch (error) {
         console.error('Error fetching post data:', error);
         toast.error('Failed to load post');
+        setNotFound(true);
       } finally {
         setIsLoading(false);
       }
     };
     
-    if (postId) {
-      fetchPostData();
-    }
-  }, [postId]);
+    fetchPostData();
+  }, [postId, navigate]);
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -162,6 +189,14 @@ const ForumPostPage = () => {
           <Skeleton className="h-10 w-3/4" />
           <Skeleton className="h-6 w-1/4" />
           <Skeleton className="h-40 w-full" />
+        </div>
+      ) : notFound ? (
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold mb-2">Post Not Found</h1>
+          <p className="text-muted-foreground mb-6">The requested post could not be found or may have been removed.</p>
+          <Button asChild>
+            <Link to="/forum">Return to Forum</Link>
+          </Button>
         </div>
       ) : post ? (
         <div className="space-y-6">
@@ -227,15 +262,7 @@ const ForumPostPage = () => {
             )}
           </div>
         </div>
-      ) : (
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold mb-2">Post Not Found</h1>
-          <p className="text-muted-foreground mb-6">The requested post could not be found or may have been removed.</p>
-          <Button asChild>
-            <Link to="/forum">Return to Forum</Link>
-          </Button>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 };
