@@ -82,13 +82,81 @@ const Chat = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatGroups, setChatGroups] = useState<ChatGroup[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const isPremium = user?.isPremium || false;
   
   useEffect(() => {
-    setChatMessages(MESSAGES.filter(msg => msg.groupId === activeConversation));
-  }, [activeConversation]);
+    const fetchMessages = async () => {
+      if (!user || !activeConversation) return;
+      
+      setIsLoadingMessages(true);
+      try {
+        const { data: messagesData, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('group_id', activeConversation)
+          .order('created_at', { ascending: true });
+        
+        if (error) throw error;
+        
+        setChatMessages(messagesData.map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          senderId: msg.sender_id,
+          senderName: user.name,
+          groupId: msg.group_id,
+          timestamp: new Date(msg.created_at),
+          read: msg.read
+        })));
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        toast.error('Failed to load messages');
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    };
+    
+    fetchMessages();
+  }, [activeConversation, user]);
+  
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!messageInput.trim() || !user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert({
+          content: messageInput,
+          sender_id: user.id,
+          group_id: activeConversation
+        })
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      
+      const newMessage: ChatMessage = {
+        id: data.id,
+        content: data.content,
+        senderId: data.sender_id,
+        senderName: user.name,
+        senderAvatar: user.avatar,
+        groupId: data.group_id,
+        timestamp: new Date(data.created_at),
+        read: false
+      };
+      
+      setChatMessages(prev => [...prev, newMessage]);
+      setMessageInput('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message');
+    }
+  };
   
   useEffect(() => {
     const fetchChatGroups = async () => {
@@ -141,26 +209,6 @@ const Chat = () => {
       }
     }
   }, [chatMessages]);
-  
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!messageInput.trim() || !user) return;
-    
-    const newMessage: ChatMessage = {
-      id: `msg_${Date.now()}`,
-      content: messageInput,
-      senderId: user.id,
-      senderName: user.name,
-      senderAvatar: user.avatar,
-      groupId: activeConversation,
-      timestamp: new Date(),
-      read: true
-    };
-    
-    setChatMessages(prev => [...prev, newMessage]);
-    setMessageInput('');
-  };
   
   const formatTime = (date: Date) => {
     return new Date(date).toLocaleTimeString('en-US', {
@@ -290,37 +338,45 @@ const Chat = () => {
               <div className="p-4 border-b bg-muted/50">
                 <h2 className="font-semibold">
                   {chatGroups.find(g => g.id === activeConversation)?.name || 
-                   DIRECT_CHATS.find(d => d.id === activeConversation)?.name || 
                    'Chat'}
                 </h2>
               </div>
               
               <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                 <div className="space-y-4">
-                  {chatMessages.map(message => (
-                    <div key={message.id} className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`flex ${message.senderId === user?.id ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 max-w-[75%]`}>
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={message.senderAvatar} />
-                          <AvatarFallback className="bg-family-blue text-white">
-                            {message.senderName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className={`px-3 py-2 rounded-lg ${
-                            message.senderId === user?.id 
-                              ? 'bg-family-blue text-white' 
-                              : 'bg-muted'
-                          }`}>
-                            <p>{message.content}</p>
-                          </div>
-                          <div className={`text-xs text-muted-foreground mt-1 ${message.senderId === user?.id ? 'text-right' : ''}`}>
-                            <span className="font-medium">{message.senderName}</span> • {formatTime(message.timestamp)}
+                  {isLoadingMessages ? (
+                    <div className="text-center text-muted-foreground">
+                      Loading messages...
+                    </div>
+                  ) : (
+                    chatMessages.map(message => (
+                      <div 
+                        key={message.id} 
+                        className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`flex ${message.senderId === user?.id ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 max-w-[75%]`}>
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={message.senderAvatar} />
+                            <AvatarFallback className="bg-family-blue text-white">
+                              {message.senderName.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className={`px-3 py-2 rounded-lg ${
+                              message.senderId === user?.id 
+                                ? 'bg-family-blue text-white' 
+                                : 'bg-muted'
+                            }`}>
+                              <p>{message.content}</p>
+                            </div>
+                            <div className={`text-xs text-muted-foreground mt-1 ${message.senderId === user?.id ? 'text-right' : ''}`}>
+                              <span className="font-medium">{message.senderName}</span> • {formatTime(message.timestamp)}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </ScrollArea>
               
