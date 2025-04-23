@@ -1,64 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
+import { Lock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatMessage, ChatGroup } from '@/types';
-import { Lock, Send, User, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import CreateChatGroup from '@/components/chat/CreateChatGroup';
 import { toast } from 'sonner';
-
-const MESSAGES: ChatMessage[] = [
-  {
-    id: '1',
-    content: 'Hey everyone! How\'s it going?',
-    senderId: '3',
-    senderName: 'Premium User',
-    groupId: '1',
-    timestamp: new Date('2023-05-20T10:15:00'),
-    read: true
-  },
-  {
-    id: '2',
-    content: 'All good here! Planning for the summer reunion.',
-    senderId: '1',
-    senderName: 'Admin User',
-    groupId: '1',
-    timestamp: new Date('2023-05-20T10:17:00'),
-    read: true
-  },
-  {
-    id: '3',
-    content: 'I uploaded some family tree documents to the resources section.',
-    senderId: '3',
-    senderName: 'Premium User',
-    groupId: '1',
-    timestamp: new Date('2023-05-20T10:19:00'),
-    read: true
-  },
-  {
-    id: '4',
-    content: 'Thanks! I\'ll check them out.',
-    senderId: '1',
-    senderName: 'Admin User',
-    groupId: '1',
-    timestamp: new Date('2023-05-20T10:20:00'),
-    read: true
-  },
-  {
-    id: '5',
-    content: 'Did anyone see the announcement about the next meetup?',
-    senderId: '3',
-    senderName: 'Premium User',
-    groupId: '1',
-    timestamp: new Date('2023-05-20T10:22:00'),
-    read: true
-  }
-];
+import ChatSidebar from '@/components/chat/ChatSidebar';
+import ChatWindow from '@/components/chat/ChatWindow';
 
 const DIRECT_CHATS = [
   {
@@ -288,111 +237,27 @@ const Chat = () => {
       <h1 className="text-3xl font-bold mb-6">Family Chat</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-[calc(100%-4rem)]">
-        <div className="md:col-span-1 space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-sm font-medium text-muted-foreground px-2">GROUP CHATS</h2>
-            <div className="space-y-1">
-              {isLoadingGroups ? (
-                <div className="px-2 py-1 text-sm text-muted-foreground">Loading...</div>
-              ) : (
-                <>
-                  {chatGroups.map(group => (
-                    <Button
-                      key={group.id}
-                      variant="ghost"
-                      className={`w-full justify-start ${activeConversation === group.id ? 'bg-muted' : ''}`}
-                      onClick={() => setActiveConversation(group.id)}
-                    >
-                      <Users className="mr-2 h-4 w-4" />
-                      <span className="truncate">{group.name}</span>
-                    </Button>
-                  ))}
-                  
-                  <CreateChatGroup onGroupCreated={handleGroupCreated} />
-                </>
-              )}
-            </div>
-          </div>
-          
-          <div className="space-y-1">
-            <h2 className="text-sm font-medium text-muted-foreground px-2">DIRECT MESSAGES</h2>
-            <div className="space-y-1">
-              {DIRECT_CHATS.map(chat => (
-                <Button
-                  key={chat.id}
-                  variant="ghost"
-                  className={`w-full justify-start ${activeConversation === chat.id ? 'bg-muted' : ''}`}
-                  onClick={() => setActiveConversation(chat.id)}
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  <span className="truncate">{chat.name}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <ChatSidebar
+          chatGroups={chatGroups}
+          directChats={DIRECT_CHATS}
+          activeConversation={activeConversation}
+          isLoadingGroups={isLoadingGroups}
+          onConversationSelect={setActiveConversation}
+          onGroupCreated={handleGroupCreated}
+        />
         
         <div className="md:col-span-3 flex flex-col h-full">
-          <Card className="flex-1 flex flex-col overflow-hidden">
-            <CardContent className="flex-1 p-0 flex flex-col h-full">
-              <div className="p-4 border-b bg-muted/50">
-                <h2 className="font-semibold">
-                  {chatGroups.find(g => g.id === activeConversation)?.name || 
-                   'Chat'}
-                </h2>
-              </div>
-              
-              <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-                <div className="space-y-4">
-                  {isLoadingMessages ? (
-                    <div className="text-center text-muted-foreground">
-                      Loading messages...
-                    </div>
-                  ) : (
-                    chatMessages.map(message => (
-                      <div 
-                        key={message.id} 
-                        className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`flex ${message.senderId === user?.id ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 max-w-[75%]`}>
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={message.senderAvatar} />
-                            <AvatarFallback className="bg-family-blue text-white">
-                              {message.senderName.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className={`px-3 py-2 rounded-lg ${
-                              message.senderId === user?.id 
-                                ? 'bg-family-blue text-white' 
-                                : 'bg-muted'
-                            }`}>
-                              <p>{message.content}</p>
-                            </div>
-                            <div className={`text-xs text-muted-foreground mt-1 ${message.senderId === user?.id ? 'text-right' : ''}`}>
-                              <span className="font-medium">{message.senderName}</span> • {formatTime(message.timestamp)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-              
-              <form onSubmit={handleSendMessage} className="p-4 border-t flex gap-2">
-                <Input
-                  placeholder="Type your message..."
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  className="flex-1"
-                />
-                <Button type="submit" className="bg-family-blue hover:bg-blue-600">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <ChatWindow
+            ref={scrollAreaRef}
+            activeGroup={chatGroups.find(g => g.id === activeConversation)}
+            messages={chatMessages}
+            isLoadingMessages={isLoadingMessages}
+            currentUserId={user?.id}
+            messageInput={messageInput}
+            onMessageChange={setMessageInput}
+            onSendMessage={handleSendMessage}
+            formatTime={formatTime}
+          />
         </div>
       </div>
     </div>
