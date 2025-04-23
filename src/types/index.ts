@@ -26,7 +26,7 @@ export interface ForumCategory {
 
 export interface ForumPost {
   id: string;
-  categoryId?: string;  // Making categoryId optional to match usage across all components
+  categoryId: string | undefined;  // Making categoryId optional to match usage
   title: string;
   content: string;
   authorId: string;

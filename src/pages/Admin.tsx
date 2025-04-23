@@ -5,20 +5,7 @@ import { Users, User as UserIcon, Activity, FileText, Bell, AlertCircle, Flag, U
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Import components
-import Dashboard from './admin/Dashboard';
-import UsersManagement from './admin/UsersManagement';
-import ActivityLog from './admin/ActivityLog';
-import ContentManagement from './admin/ContentManagement';
-import AnnouncementManagement from './admin/AnnouncementManagement';
-import ReportsManagement from './admin/ReportsManagement';
-import TeamsManagement from './admin/TeamsManagement';
-import AccessDenied from './admin/AccessDenied';
-import { ADMIN_USERS } from './admin/AdminData';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types';
+import InvitationsTracking from './admin/InvitationsTracking';
 
 const Admin = () => {
   const { user, isAuthenticated } = useAuth();
@@ -103,7 +90,7 @@ const Admin = () => {
       )}
       
       <Tabs defaultValue="dashboard">
-        <TabsList className="grid w-full grid-cols-7 mb-6">
+        <TabsList className="grid w-full grid-cols-8 mb-6">
           <TabsTrigger value="dashboard">
             <Activity className="mr-2 h-4 w-4" />
             Dashboard
@@ -131,6 +118,10 @@ const Admin = () => {
           <TabsTrigger value="teams">
             <Users className="mr-2 h-4 w-4" />
             Teams
+          </TabsTrigger>
+          <TabsTrigger value="invitations">
+            <UserPlus className="mr-2 h-4 w-4" />
+            Invitations
           </TabsTrigger>
         </TabsList>
         
@@ -178,6 +169,10 @@ const Admin = () => {
 
             <TabsContent value="teams">
               <TeamsManagement />
+            </TabsContent>
+
+            <TabsContent value="invitations">
+              <InvitationsTracking />
             </TabsContent>
           </>
         )}

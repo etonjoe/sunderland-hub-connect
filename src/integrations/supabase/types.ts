@@ -308,6 +308,42 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          enrolled_at: string | null
+          id: string
+          invited_by: string
+          rejected_at: string | null
+          role: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          enrolled_at?: string | null
+          id?: string
+          invited_by: string
+          rejected_at?: string | null
+          role: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          enrolled_at?: string | null
+          id?: string
+          invited_by?: string
+          rejected_at?: string | null
+          role?: string
+          status?: string
+        }
+        Relationships: []
+      }
       membership_stats: {
         Row: {
           created_at: string | null

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -86,10 +85,9 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
   const onCreateUser = async (data) => {
     setIsCreatingUser(true);
     try {
-      // First create the user
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
-        password: `Temp${Math.floor(100000 + Math.random() * 900000)}!`, // Generate random secure password
+        password: `Temp${Math.floor(100000 + Math.random() * 900000)}!`,
         options: {
           data: {
             name: data.name,
@@ -100,10 +98,8 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
 
       if (signUpError) throw signUpError;
 
-      // If successful, send invite email if requested
       if (data.sendInvite) {
         try {
-          // Send email notification using Supabase Edge Function (or simulated here)
           const { error: emailError } = await supabase.functions.invoke('send-invitation', {
             body: {
               email: data.email,
@@ -141,10 +137,19 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
   const onInviteUser = async (data) => {
     setIsSendingInvite(true);
     try {
-      // Create a temporary password for the new user
+      const { error: invitationError } = await supabase
+        .from('invitations')
+        .insert({
+          email: data.email,
+          role: data.role,
+          invited_by: currentUser?.id,
+          status: 'pending'
+        });
+
+      if (invitationError) throw invitationError;
+
       const tempPassword = `Temp${Math.floor(100000 + Math.random() * 900000)}!`;
       
-      // First create the user in the auth system
       const { data: userData, error: createError } = await supabase.auth.signUp({
         email: data.email,
         password: tempPassword,
@@ -158,7 +163,6 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
 
       if (createError) throw createError;
       
-      // Try to send an invitation email
       try {
         const { error: emailError } = await supabase.functions.invoke('send-invitation', {
           body: {
@@ -267,7 +271,6 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
         </Table>
       </CardContent>
       
-      {/* Create User Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -359,7 +362,6 @@ const UsersManagement = ({ users, searchTerm, onSearchChange, onUserAdded }) => 
         </DialogContent>
       </Dialog>
 
-      {/* Invite User Dialog */}
       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
         <DialogContent>
           <DialogHeader>
