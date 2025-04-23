@@ -45,7 +45,7 @@ const InvitationsTracking = () => {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'pending': return 'secondary';
-      case 'accepted': return 'success';
+      case 'accepted': return 'outline';  // Changed from 'success' to 'outline'
       case 'rejected': return 'destructive';
       case 'enrolled': return 'default';
       default: return 'secondary';

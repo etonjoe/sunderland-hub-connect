@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -5,14 +6,25 @@ import { Users, User as UserIcon, Activity, FileText, Bell, AlertCircle, Flag, U
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import InvitationsTracking from './admin/InvitationsTracking';
+import InvitationsTracking from '@/components/admin/InvitationsTracking';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import Dashboard from './admin/Dashboard';
+import UsersManagement from './admin/UsersManagement';
+import ActivityLog from './admin/ActivityLog';
+import ContentManagement from './admin/ContentManagement';
+import AnnouncementManagement from './admin/AnnouncementManagement';
+import ReportsManagement from './admin/ReportsManagement';
+import TeamsManagement from './admin/TeamsManagement';
+import AccessDenied from './admin/AccessDenied';
+import { UserType } from '@/types/admin';
 
 const Admin = () => {
   const { user, isAuthenticated } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [users, setUsers] = useState<User[]>(ADMIN_USERS);
+  const [users, setUsers] = useState<UserType[]>([]); 
   
   const isAdmin = user?.role === 'admin';
   
@@ -39,7 +51,7 @@ const Admin = () => {
           lastLogin: 'Not available',
           createdAt: profile.created_at ? new Date(profile.created_at) : new Date()
         }));
-        setUsers(userList as User[]);
+        setUsers(userList);
       }
     } catch (err) {
       console.error('Error fetching users:', err);
