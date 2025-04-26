@@ -1,5 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { Resend } from 'npm:resend@3.0.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,41 +38,64 @@ serve(async (req) => {
       )
     }
 
-    // In a production environment, you would use a service like Resend or SendGrid to send emails
-    // For now, we'll just log the details and simulate a successful response
-    console.log('Sending invitation email to:', email)
+    console.log('Processing invitation for:', email)
     console.log('Role:', role)
     console.log('Invited by:', inviter)
-    console.log('Personalized message:', message || 'No personalized message')
-    console.log('Temporary password (redacted for security):', temporaryPassword ? '********' : 'None provided')
+    
+    // Initialize Resend with API key from environment variable
+    const resendApiKey = Deno.env.get('RESEND_API_KEY')
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set')
+    }
+    
+    const resend = new Resend(resendApiKey)
 
-    // Insert a record in the database to track invitations
-    // This would be a good place to store invitation details for tracking/reporting
+    // Build the HTML email content
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+        <h1 style="color: #333; text-align: center;">Welcome to SunderlandFamily Hub!</h1>
+        <p style="font-size: 16px; line-height: 1.5; color: #555;">
+          You have been invited by <strong>${inviter}</strong> to join SunderlandFamily Hub as a <strong>${role}</strong>.
+        </p>
+        ${message ? `<p style="font-size: 16px; line-height: 1.5; color: #555; background-color: #f9f9f9; padding: 15px; border-left: 4px solid #607d8b; font-style: italic;">
+          "${message}"
+        </p>` : ''}
+        ${temporaryPassword ? `<p style="font-size: 16px; line-height: 1.5; color: #555;">
+          Your temporary password is: <strong style="background-color: #f0f0f0; padding: 3px 6px; border-radius: 3px;">${temporaryPassword}</strong>
+          <br><em>(Please change your password after logging in for the first time)</em>
+        </p>` : ''}
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://sunderland-family-hub.vercel.app/login" style="background-color: #4a86e8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Log In Now</a>
+        </div>
+        <p style="font-size: 14px; color: #777; text-align: center;">
+          If you have any questions, please contact us at support@sunderlandfamily.com
+        </p>
+      </div>
+    `
 
-    // In a real implementation, this would be where you'd call your email service
-    // For example, with Resend:
-    /*
-    const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
-    await resend.emails.send({
+    // Send email using Resend
+    const { data, error: resendError } = await resend.emails.send({
       from: 'SunderlandFamily Hub <noreply@sunderlandfamily.com>',
       to: [email],
       subject: 'You have been invited to join SunderlandFamily Hub',
-      html: `
-        <h1>Welcome to SunderlandFamily Hub!</h1>
-        <p>You have been invited by ${inviter} to join SunderlandFamily Hub as a ${role}.</p>
-        ${message ? `<p>Personal message: "${message}"</p>` : ''}
-        ${temporaryPassword ? `<p>Your temporary password is: <strong>${temporaryPassword}</strong></p>` : ''}
-        <p>Please click the link below to get started:</p>
-        <p><a href="https://your-app-url.com/login">Login to SunderlandFamily Hub</a></p>
-        <p>If you have any questions, please don't hesitate to contact us.</p>
-      `,
+      html: htmlContent,
     });
-    */
+
+    if (resendError) {
+      console.error('Resend API error:', resendError);
+      throw new Error(`Failed to send email: ${resendError.message}`);
+    }
+
+    console.log('Email sent successfully:', data);
+
+    // Insert a record in the database to track invitations
+    // This would be a good place to store invitation details for tracking/reporting
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Invitation sent successfully',
+        data
       }),
       {
         status: 200,
