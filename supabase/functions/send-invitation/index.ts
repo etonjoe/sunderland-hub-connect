@@ -51,8 +51,9 @@ serve(async (req) => {
     const resend = new Resend(resendApiKey)
 
     // Get the application URL from environment or use a default
-    // We'll use a deployed URL instead of localhost
-    const appUrl = 'https://sunderland-family-hub.vercel.app'
+    // Get deployment URL from Deno.env or use a fallback
+    const appUrl = Deno.env.get('APP_URL') || 'https://sunderland-family-hub.vercel.app'
+    console.log('Using app URL:', appUrl)
 
     // Build the HTML email content
     const htmlContent = `
@@ -79,6 +80,8 @@ serve(async (req) => {
         </p>
       </div>
     `
+
+    console.log('Sending email to:', email)
 
     // Send email using Resend
     const { data, error: resendError } = await resend.emails.send({
