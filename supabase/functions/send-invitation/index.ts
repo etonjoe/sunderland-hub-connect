@@ -50,6 +50,10 @@ serve(async (req) => {
     
     const resend = new Resend(resendApiKey)
 
+    // Get the application URL from environment or use a default
+    // We'll use a deployed URL instead of localhost
+    const appUrl = 'https://sunderland-family-hub.vercel.app'
+
     // Build the HTML email content
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
@@ -65,9 +69,12 @@ serve(async (req) => {
           <br><em>(Please change your password after logging in for the first time)</em>
         </p>` : ''}
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://sunderland-family-hub.vercel.app/login" style="background-color: #4a86e8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Log In Now</a>
+          <a href="${appUrl}/login" style="background-color: #4a86e8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Log In Now</a>
         </div>
-        <p style="font-size: 14px; color: #777; text-align: center;">
+        <p style="font-size: 16px; line-height: 1.5; color: #555;">
+          If this is your first time logging in, you will need to use the temporary password provided above or use the password reset option if no temporary password was included.
+        </p>
+        <p style="font-size: 14px; color: #777; text-align: center; margin-top: 30px;">
           If you have any questions, please contact us at support@sunderlandfamily.com
         </p>
       </div>
@@ -87,9 +94,6 @@ serve(async (req) => {
     }
 
     console.log('Email sent successfully:', data);
-
-    // Insert a record in the database to track invitations
-    // This would be a good place to store invitation details for tracking/reporting
 
     return new Response(
       JSON.stringify({ 
