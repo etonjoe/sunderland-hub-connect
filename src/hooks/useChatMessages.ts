@@ -33,7 +33,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         throw new Error("Invalid conversation ID format");
       }
       
-      // Fixed query with proper foreign key relationship
+      // Fixed query by joining chat_messages with profiles correctly
       const { data: messagesData, error } = await supabase
         .from('chat_messages')
         .select(`
@@ -44,20 +44,20 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           created_at,
           read,
           reply_to_id,
-          sender:sender_id(name, avatar)
+          profiles:sender_id(name, avatar)
         `)
         .eq('group_id', activeConversation)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
       
-      // Transform the data with proper type handling
+      // Transform the data with proper type handling and nullish coalescing
       setChatMessages(messagesData.map(msg => ({
         id: msg.id,
         content: msg.content,
         senderId: msg.sender_id,
-        senderName: msg.sender?.name ?? 'Unknown User',
-        senderAvatar: msg.sender?.avatar ?? '',
+        senderName: msg.profiles?.name ?? 'Unknown User',
+        senderAvatar: msg.profiles?.avatar ?? '',
         groupId: msg.group_id,
         timestamp: new Date(msg.created_at),
         read: msg.read,
@@ -126,19 +126,19 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           created_at,
           read,
           reply_to_id,
-          sender:sender_id(name, avatar)
+          profiles:sender_id(name, avatar)
         `)
         .single();
       
       if (error) throw error;
       
-      // Add the new message to the chat with proper type handling
+      // Add the new message to the chat with proper type handling and nullish coalescing
       const newMessage: ChatMessage = {
         id: data.id,
         content: data.content,
         senderId: data.sender_id,
-        senderName: data.sender?.name ?? 'Unknown User',
-        senderAvatar: data.sender?.avatar ?? '',
+        senderName: data.profiles?.name ?? 'Unknown User',
+        senderAvatar: data.profiles?.avatar ?? '',
         groupId: data.group_id,
         timestamp: new Date(data.created_at),
         read: false,
