@@ -33,7 +33,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         throw new Error("Invalid conversation ID format");
       }
       
-      // Fixed query to properly join with profiles table
+      // Updated query to correctly join with profiles table
       const { data: messagesData, error } = await supabase
         .from('chat_messages')
         .select(`
@@ -44,7 +44,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           created_at,
           read,
           reply_to_id,
-          profiles (name, avatar)
+          sender:profiles(name, avatar)
         `)
         .eq('group_id', activeConversation)
         .order('created_at', { ascending: true });
@@ -56,8 +56,8 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         id: msg.id,
         content: msg.content,
         senderId: msg.sender_id,
-        senderName: msg.profiles?.name ?? 'Unknown User',
-        senderAvatar: msg.profiles?.avatar ?? '',
+        senderName: msg.sender?.name ?? 'Unknown User',
+        senderAvatar: msg.sender?.avatar ?? '',
         groupId: msg.group_id,
         timestamp: new Date(msg.created_at),
         read: msg.read,
@@ -126,7 +126,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           created_at,
           read,
           reply_to_id,
-          profiles (name, avatar)
+          sender:profiles(name, avatar)
         `)
         .single();
       
@@ -137,8 +137,8 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         id: data.id,
         content: data.content,
         senderId: data.sender_id,
-        senderName: data.profiles?.name ?? 'Unknown User',
-        senderAvatar: data.profiles?.avatar ?? '',
+        senderName: data.sender?.name ?? 'Unknown User',
+        senderAvatar: data.sender?.avatar ?? '',
         groupId: data.group_id,
         timestamp: new Date(data.created_at),
         read: false,
