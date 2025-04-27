@@ -51,16 +51,15 @@ serve(async (req) => {
     const resend = new Resend(resendApiKey)
 
     // Get the application URL from environment or use a default
-    // Get deployment URL from Deno.env or use a fallback
     const appUrl = Deno.env.get('APP_URL') || 'https://sunderland-family-hub.vercel.app'
     console.log('Using app URL:', appUrl)
 
     // Build the HTML email content
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-        <h1 style="color: #333; text-align: center;">Welcome to SunderlandFamily Hub!</h1>
+        <h1 style="color: #333; text-align: center;">Welcome to Sunderland Family Hub!</h1>
         <p style="font-size: 16px; line-height: 1.5; color: #555;">
-          You have been invited by <strong>${inviter}</strong> to join SunderlandFamily Hub as a <strong>${role}</strong>.
+          You have been invited by <strong>${inviter}</strong> to join Sunderland Family Hub as a <strong>${role}</strong>.
         </p>
         ${message ? `<p style="font-size: 16px; line-height: 1.5; color: #555; background-color: #f9f9f9; padding: 15px; border-left: 4px solid #607d8b; font-style: italic;">
           "${message}"
@@ -85,9 +84,9 @@ serve(async (req) => {
 
     // Send email using Resend
     const { data, error: resendError } = await resend.emails.send({
-      from: 'SunderlandFamily Hub <noreply@sunderlandfamily.com>',
+      from: 'Sunderland Family Hub <onboarding@resend.dev>',
       to: [email],
-      subject: 'You have been invited to join SunderlandFamily Hub',
+      subject: 'You have been invited to join Sunderland Family Hub',
       html: htmlContent,
     });
 
