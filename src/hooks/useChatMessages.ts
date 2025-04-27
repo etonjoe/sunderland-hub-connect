@@ -112,6 +112,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
       
       if (error) throw error;
       
+      // Add the new message to the chat
       const newMessage: ChatMessage = {
         id: data.id,
         content: data.content,
