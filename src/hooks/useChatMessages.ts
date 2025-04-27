@@ -33,20 +33,25 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         throw new Error("Invalid conversation ID format");
       }
       
+      // Modified query to properly fetch messages
       const { data: messagesData, error } = await supabase
         .from('chat_messages')
-        .select('*, sender:sender_id(name, avatar)')
+        .select(`
+          *,
+          profiles:sender_id (name, avatar)
+        `)
         .eq('group_id', activeConversation)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
       
+      // Transform the data with proper type handling
       setChatMessages(messagesData.map(msg => ({
         id: msg.id,
         content: msg.content,
         senderId: msg.sender_id,
-        senderName: msg.sender?.name ?? 'Unknown User',
-        senderAvatar: msg.sender?.avatar ?? '',
+        senderName: msg.profiles?.name ?? 'Unknown User',
+        senderAvatar: msg.profiles?.avatar ?? '',
         groupId: msg.group_id,
         timestamp: new Date(msg.created_at),
         read: msg.read,
@@ -107,18 +112,21 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           group_id: activeConversation,
           reply_to_id: replyToId
         })
-        .select('*, sender:sender_id(name, avatar)')
+        .select(`
+          *,
+          profiles:sender_id (name, avatar)
+        `)
         .single();
       
       if (error) throw error;
       
-      // Add the new message to the chat
+      // Add the new message to the chat with proper type handling
       const newMessage: ChatMessage = {
         id: data.id,
         content: data.content,
         senderId: data.sender_id,
-        senderName: data.sender?.name ?? 'Unknown User',
-        senderAvatar: data.sender?.avatar ?? '',
+        senderName: data.profiles?.name ?? 'Unknown User',
+        senderAvatar: data.profiles?.avatar ?? '',
         groupId: data.group_id,
         timestamp: new Date(data.created_at),
         read: false,
