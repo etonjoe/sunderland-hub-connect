@@ -19,24 +19,28 @@ const NotFound = () => {
   }, [location.pathname, isAuthenticated]);
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center max-w-md p-6">
-        <h1 className="text-6xl font-bold mb-4 text-primary">404</h1>
-        <p className="text-2xl font-semibold mb-2">Page Not Found</p>
-        <p className="text-muted-foreground mb-2">
-          The page <span className="font-mono bg-muted px-2 py-1 rounded">{location.pathname}</span> could not be found.
+        <h1 className="text-8xl font-bold mb-6 text-blue-500">404</h1>
+        <h2 className="text-3xl font-semibold mb-6 text-gray-800">Page Not Found</h2>
+        
+        <p className="text-lg mb-3 text-gray-600">
+          The page <span className="font-mono bg-gray-100 px-2 py-1 rounded">{location.pathname}</span> could not be found.
         </p>
+        
         {!isAuthenticated && location.pathname !== "/login" && (
-          <p className="text-muted-foreground mb-6">
-            You might need to <Link to="/login" className="text-primary hover:underline">log in</Link> to access this page.
+          <p className="text-lg mb-6 text-gray-600">
+            You might need to <Link to="/login" className="text-blue-500 hover:underline">log in</Link> to access this page.
           </p>
         )}
-        <p className="text-muted-foreground mb-6">
+        
+        <p className="text-lg mb-8 text-gray-600">
           Please check the URL or navigate back to the home page.
         </p>
-        <Button asChild>
-          <Link to="/" className="inline-flex items-center">
-            <Home className="mr-2 h-4 w-4" />
+        
+        <Button asChild size="lg" className="bg-blue-500 hover:bg-blue-600">
+          <Link to="/" className="inline-flex items-center px-8 py-3">
+            <Home className="mr-2 h-5 w-5" />
             Return to Home
           </Link>
         </Button>
