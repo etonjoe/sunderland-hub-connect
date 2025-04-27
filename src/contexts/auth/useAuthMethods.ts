@@ -1,74 +1,15 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Dispatch, SetStateAction } from 'react';
 import { User } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { supabase, mapSupabaseUser, isSupabaseConfigured } from '@/lib/supabase';
+import { mapSupabaseUser } from '@/lib/supabase';
 
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  register: (email: string, password: string, metadata: any) => Promise<boolean>;
-  updateProfile: (user: Partial<User>) => Promise<boolean>;
-  upgradeAccount: () => Promise<boolean>;
-  resetPassword: (email: string) => Promise<boolean>;
-  supabaseConfigured: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const supabaseConfigured = isSupabaseConfigured();
-  
-  useEffect(() => {
-    if (!supabaseConfigured) {
-      console.warn('Supabase is not configured correctly. Authentication features will not work.');
-      toast.error('Authentication is not available. Supabase configuration is missing.');
-      setIsLoading(false);
-      return;
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const mappedUser = mapSupabaseUser(session.user);
-        setUser(mappedUser);
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const mappedUser = mapSupabaseUser(session.user);
-        setUser(mappedUser);
-      }
-      setIsLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabaseConfigured]);
-
+export const useAuthMethods = (
+  setUser: Dispatch<SetStateAction<User | null>>,
+  setIsLoading: Dispatch<SetStateAction<boolean>>
+) => {
   const login = async (email: string, password: string): Promise<boolean> => {
-    if (!supabaseConfigured) {
-      toast.error('Authentication is not available. Supabase configuration is missing.');
-      return false;
-    }
-    
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -93,11 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    if (!supabaseConfigured) {
-      toast.error('Authentication is not available. Supabase configuration is missing.');
-      return;
-    }
-
     try {
       await supabase.auth.signOut();
       toast.success('Logged out successfully');
@@ -108,11 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (email: string, password: string, metadata: any): Promise<boolean> => {
-    if (!supabaseConfigured) {
-      toast.error('Authentication is not available. Supabase configuration is missing.');
-      return false;
-    }
-
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
@@ -140,13 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
-    if (!supabaseConfigured) {
-      toast.error('Authentication is not available. Supabase configuration is missing.');
-      return false;
-    }
-
-    if (!user) return false;
-    
     try {
       const { error: authError } = await supabase.auth.updateUser({
         data: userData
@@ -162,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { error: profileError } = await supabase
           .from('profiles')
           .update(userData)
-          .eq('id', user.id);
+          .eq('id', userData.id);
 
         if (profileError) {
           console.warn('Profile update warning:', profileError);
@@ -172,7 +96,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser(prev => prev ? { ...prev, ...userData } : null);
-      
       return true;
     } catch (error) {
       console.error('Update profile error:', error);
@@ -182,13 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const upgradeAccount = async (): Promise<boolean> => {
-    if (!supabaseConfigured) {
-      toast.error('Authentication is not available. Supabase configuration is missing.');
-      return false;
-    }
-
-    if (!user) return false;
-    
     try {
       const { error } = await supabase.auth.updateUser({
         data: {
@@ -211,14 +127,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string): Promise<boolean> => {
-    if (!supabaseConfigured) {
-      toast.error('Authentication is not available. Supabase configuration is missing.');
-      return false;
-    }
-
     setIsLoading(true);
     try {
-      // Get the current domain for dynamic redirect URL
       const origin = window.location.origin;
       const redirectUrl = `${origin}/reset-password`;
 
@@ -242,22 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        login,
-        logout,
-        register,
-        updateProfile,
-        upgradeAccount,
-        resetPassword,
-        supabaseConfigured
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return {
+    login,
+    logout,
+    register,
+    updateProfile,
+    upgradeAccount,
+    resetPassword
+  };
 };
