@@ -44,7 +44,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           created_at,
           read,
           reply_to_id,
-          profiles:sender_id(name, avatar)
+          profiles(name, avatar)
         `)
         .eq('group_id', activeConversation)
         .order('created_at', { ascending: true });
@@ -126,7 +126,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           created_at,
           read,
           reply_to_id,
-          profiles:sender_id(name, avatar)
+          profiles(name, avatar)
         `)
         .single();
       
