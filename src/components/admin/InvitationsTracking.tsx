@@ -30,6 +30,7 @@ const InvitationsTracking = () => {
 
   const fetchInvitations = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('invitations')
         .select('*')
@@ -48,6 +49,34 @@ const InvitationsTracking = () => {
   const handleDelete = async (id: string) => {
     try {
       setIsDeletingId(id);
+      
+      // Delete the user account first if it exists
+      const { data: invitationData, error: fetchError } = await supabase
+        .from('invitations')
+        .select('email')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching invitation details:', fetchError);
+      } else if (invitationData?.email) {
+        // Find and delete the user account with matching email
+        const { data: userData, error: userFetchError } = await supabase
+          .from('auth.users')
+          .select('id')
+          .eq('email', invitationData.email)
+          .maybeSingle();
+        
+        if (!userFetchError && userData?.id) {
+          // If user exists, delete the user account
+          const { error: userDeleteError } = await supabase.auth.admin.deleteUser(userData.id);
+          if (userDeleteError) {
+            console.error('Error deleting user account:', userDeleteError);
+          }
+        }
+      }
+      
+      // Delete the invitation record
       const { error } = await supabase
         .from('invitations')
         .delete()
@@ -55,6 +84,7 @@ const InvitationsTracking = () => {
 
       if (error) throw error;
 
+      // Update local state to remove the deleted invitation
       setInvitations(invitations.filter(inv => inv.id !== id));
       toast.success('Invitation deleted successfully');
     } catch (error) {
@@ -106,31 +136,43 @@ const InvitationsTracking = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invitations.map((invitation) => (
-              <TableRow key={invitation.id}>
-                <TableCell>{invitation.email}</TableCell>
-                <TableCell>{invitation.role}</TableCell>
-                <TableCell>
-                  <Badge variant={getStatusBadgeVariant(invitation.status)}>
-                    {invitation.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>{formatDate(invitation.created_at)}</TableCell>
-                <TableCell>{formatDate(invitation.accepted_at)}</TableCell>
-                <TableCell>{formatDate(invitation.rejected_at)}</TableCell>
-                <TableCell>{formatDate(invitation.enrolled_at)}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(invitation.id)}
-                    disabled={isDeletingId === invitation.id || invitation.status !== 'pending'}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+            {invitations.length === 0 && !isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-6">
+                  No invitations found
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              invitations.map((invitation) => (
+                <TableRow key={invitation.id}>
+                  <TableCell>{invitation.email}</TableCell>
+                  <TableCell>{invitation.role}</TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusBadgeVariant(invitation.status)}>
+                      {invitation.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatDate(invitation.created_at)}</TableCell>
+                  <TableCell>{formatDate(invitation.accepted_at)}</TableCell>
+                  <TableCell>{formatDate(invitation.rejected_at)}</TableCell>
+                  <TableCell>{formatDate(invitation.enrolled_at)}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(invitation.id)}
+                      disabled={isDeletingId === invitation.id || invitation.status !== 'pending'}
+                    >
+                      {isDeletingId === invitation.id ? (
+                        <span className="animate-pulse">Deleting...</span>
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>
