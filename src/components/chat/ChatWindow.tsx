@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChatMessage as ChatMessageType, ChatGroup } from '@/types';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
-import { forwardRef } from 'react';
+import { forwardRef, useState } from 'react';
 
 interface ChatWindowProps {
   activeGroup?: ChatGroup;
