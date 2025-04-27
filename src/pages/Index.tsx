@@ -7,7 +7,7 @@ const Index = () => {
   
   // If there's an error in the URL, redirect to the auth redirect handler
   if (error) {
-    return <Navigate to={`/auth/callback${window.location.hash}`} replace />;
+    return <Navigate to={`/auth/callback${window.location.search}${window.location.hash}`} replace />;
   }
   
   return <Navigate to="/" replace />;

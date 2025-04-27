@@ -25,6 +25,7 @@ import ConfirmationSuccess from "./pages/ConfirmationSuccess";
 import AuthRedirect from "./pages/AuthRedirect";
 import AboutUs from "./pages/AboutUs";
 import AIAssistant from "./components/AIAssistant";
+import Index from "./pages/Index";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -80,6 +81,9 @@ const AppRoutes = () => {
           <Route path="/about" element={<AboutUs />} />
           <Route path="/auth/confirm" element={<ConfirmationSuccess />} />
           <Route path="/auth/callback" element={<AuthRedirect />} />
+          
+          {/* Special catch-all route for handling Supabase auth returns */}
+          <Route path="/index.html" element={<Index />} />
 
           {/* Protected routes */}
           <Route path="/profile" element={
