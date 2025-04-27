@@ -33,7 +33,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         throw new Error("Invalid conversation ID format");
       }
       
-      // Updated query to correctly join with profiles table
+      // Fixed query with proper foreign key relationship
       const { data: messagesData, error } = await supabase
         .from('chat_messages')
         .select(`
@@ -44,7 +44,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           created_at,
           read,
           reply_to_id,
-          sender:profiles(name, avatar)
+          sender:sender_id(name, avatar)
         `)
         .eq('group_id', activeConversation)
         .order('created_at', { ascending: true });
@@ -126,7 +126,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           created_at,
           read,
           reply_to_id,
-          sender:profiles(name, avatar)
+          sender:sender_id(name, avatar)
         `)
         .single();
       
