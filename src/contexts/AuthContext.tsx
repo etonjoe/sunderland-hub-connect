@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { toast } from 'sonner';
@@ -13,6 +12,7 @@ interface AuthContextType {
   register: (email: string, password: string, metadata: any) => Promise<boolean>;
   updateProfile: (user: Partial<User>) => Promise<boolean>;
   upgradeAccount: () => Promise<boolean>;
+  resetPassword: (email: string) => Promise<boolean>;
   supabaseConfigured: boolean;
 }
 
@@ -39,7 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const mappedUser = mapSupabaseUser(session.user);
@@ -50,7 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     });
 
-    // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         const mappedUser = mapSupabaseUser(session.user);
@@ -149,7 +147,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return false;
     
     try {
-      // Update in auth metadata
       const { error: authError } = await supabase.auth.updateUser({
         data: userData
       });
@@ -160,7 +157,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      // Also update in profiles table if it exists
       try {
         const { error: profileError } = await supabase
           .from('profiles')
@@ -169,14 +165,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (profileError) {
           console.warn('Profile update warning:', profileError);
-          // Don't return false here, we still updated the auth data successfully
         }
       } catch (profileUpdateError) {
         console.warn('Profile table might not exist or has different structure:', profileUpdateError);
-        // Continue since we've already updated auth
       }
 
-      // Update local user state
       setUser(prev => prev ? { ...prev, ...userData } : null);
       
       return true;
@@ -216,6 +209,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resetPassword = async (email: string): Promise<boolean> => {
+    if (!supabaseConfigured) {
+      toast.error('Authentication is not available. Supabase configuration is missing.');
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      
+      if (error) {
+        toast.error(error.message);
+        return false;
+      }
+      
+      toast.success('Password reset instructions have been sent to your email');
+      return true;
+    } catch (error) {
+      console.error('Password reset error:', error);
+      toast.error('An error occurred during the password reset');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -227,6 +248,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         updateProfile,
         upgradeAccount,
+        resetPassword,
         supabaseConfigured
       }}
     >

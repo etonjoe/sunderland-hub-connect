@@ -10,6 +10,8 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Forum from "./pages/Forum";
 import ForumPost from "./pages/ForumPost";
@@ -71,6 +73,10 @@ const AppRoutes = () => {
           <Route path="/register" element={
             isAuthenticated ? <Navigate to="/" replace /> : <Register />
           } />
+          <Route path="/forgot-password" element={
+            isAuthenticated ? <Navigate to="/" replace /> : <ForgotPassword />
+          } />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/auth/confirm" element={<ConfirmationSuccess />} />
           <Route path="/auth/callback" element={<AuthRedirect />} />
