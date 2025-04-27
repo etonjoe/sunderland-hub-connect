@@ -56,6 +56,7 @@ export interface ChatMessage {
   groupId: string;
   timestamp: Date;
   read: boolean;
+  reply_to_id?: string | null;
 }
 
 export interface ChatGroup {

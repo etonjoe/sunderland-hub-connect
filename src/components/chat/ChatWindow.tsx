@@ -13,7 +13,7 @@ interface ChatWindowProps {
   currentUserId?: string;
   messageInput: string;
   onMessageChange: (value: string) => void;
-  onSendMessage: (e: React.FormEvent) => void;
+  onSendMessage: (e: React.FormEvent, replyToId?: string) => void;
   formatTime: (date: Date) => string;
 }
 
@@ -27,6 +27,17 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(({
   onSendMessage,
   formatTime
 }, ref) => {
+  const [replyToId, setReplyToId] = useState<string | undefined>();
+
+  const handleReply = (messageId: string) => {
+    setReplyToId(messageId);
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    onSendMessage(e, replyToId);
+    setReplyToId(undefined);
+  };
+
   return (
     <Card className="flex-1 flex flex-col overflow-hidden">
       <CardContent className="flex-1 p-0 flex flex-col h-full">
@@ -48,7 +59,9 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(({
                   key={message.id}
                   message={message}
                   isCurrentUser={message.senderId === currentUserId}
+                  currentUserId={currentUserId}
                   formatTime={formatTime}
+                  onReply={handleReply}
                 />
               ))
             )}
@@ -58,7 +71,9 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(({
         <ChatInput
           messageInput={messageInput}
           onMessageChange={onMessageChange}
-          onSendMessage={onSendMessage}
+          onSendMessage={handleSendMessage}
+          replyToId={replyToId}
+          onCancelReply={() => setReplyToId(undefined)}
         />
       </CardContent>
     </Card>
