@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,6 +22,7 @@ interface Invitation {
 const InvitationsTracking = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInvitations();
@@ -39,6 +42,26 @@ const InvitationsTracking = () => {
       toast.error('Failed to load invitations');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      setIsDeletingId(id);
+      const { error } = await supabase
+        .from('invitations')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setInvitations(invitations.filter(inv => inv.id !== id));
+      toast.success('Invitation deleted successfully');
+    } catch (error) {
+      console.error('Error deleting invitation:', error);
+      toast.error('Failed to delete invitation');
+    } finally {
+      setIsDeletingId(null);
     }
   };
 
@@ -79,6 +102,7 @@ const InvitationsTracking = () => {
               <TableHead>Accepted</TableHead>
               <TableHead>Rejected</TableHead>
               <TableHead>Enrolled</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -95,6 +119,16 @@ const InvitationsTracking = () => {
                 <TableCell>{formatDate(invitation.accepted_at)}</TableCell>
                 <TableCell>{formatDate(invitation.rejected_at)}</TableCell>
                 <TableCell>{formatDate(invitation.enrolled_at)}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(invitation.id)}
+                    disabled={isDeletingId === invitation.id || invitation.status !== 'pending'}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
