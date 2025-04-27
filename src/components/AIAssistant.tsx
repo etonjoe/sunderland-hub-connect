@@ -5,14 +5,21 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Send, MessageSquare } from 'lucide-react';
+import { Loader2, Send, MessageSquare, Link as LinkIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  links?: {
+    title: string;
+    url: string;
+    summary: string;
+    type: 'forum' | 'announcement';
+  }[];
 }
 
 const AIAssistant = () => {
@@ -20,7 +27,7 @@ const AIAssistant = () => {
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m your Family Hub AI Assistant. I can answer questions about your family hub content, events, and more. How can I help you today?',
+      content: "Hello! I'm your Family Hub AI Assistant. I can answer questions about your family hub content, events, and more. How can I help you today?",
       timestamp: new Date()
     }
   ]);
@@ -44,48 +51,54 @@ const AIAssistant = () => {
     setIsLoading(true);
     
     try {
-      // Search forum posts, announcements, etc. for relevant content
       const { data: forumData } = await supabase
         .from('forum_posts')
-        .select('title, content')
+        .select('id, title, content')
         .textSearch('content', input.split(' ').filter(word => word.length > 3).join(' & '))
         .limit(3);
       
       const { data: announcementData } = await supabase
         .from('announcements')
-        .select('title, content')
+        .select('id, title, content')
         .textSearch('content', input.split(' ').filter(word => word.length > 3).join(' & '))
         .limit(3);
       
-      // Prepare a response based on the found content
       let responseContent = 'I couldn\'t find specific information about that in our family hub resources.';
+      const links = [];
       
       if ((forumData && forumData.length > 0) || (announcementData && announcementData.length > 0)) {
-        responseContent = 'Here\'s what I found in our family hub:\n\n';
+        responseContent = 'Here\'s what I found in our family hub:';
         
         if (forumData && forumData.length > 0) {
-          responseContent += 'From our forum discussions:\n';
           forumData.forEach(post => {
-            responseContent += `- ${post.title}: ${post.content.substring(0, 100)}...\n`;
+            links.push({
+              title: post.title,
+              url: `/forum/post/${post.id}`,
+              summary: post.content.substring(0, 150) + '...',
+              type: 'forum' as const
+            });
           });
-          responseContent += '\n';
         }
         
         if (announcementData && announcementData.length > 0) {
-          responseContent += 'From our announcements:\n';
           announcementData.forEach(announcement => {
-            responseContent += `- ${announcement.title}: ${announcement.content.substring(0, 100)}...\n`;
+            links.push({
+              title: announcement.title,
+              url: `/announcements/${announcement.id}`,
+              summary: announcement.content.substring(0, 150) + '...',
+              type: 'announcement' as const
+            });
           });
         }
       }
       
-      // Add AI response
       setTimeout(() => {
         const aiResponse: Message = {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: responseContent,
-          timestamp: new Date()
+          timestamp: new Date(),
+          links: links.length > 0 ? links : undefined
         };
         
         setMessages(prev => [...prev, aiResponse]);
@@ -106,7 +119,7 @@ const AIAssistant = () => {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <Card className="flex flex-col h-[500px]">
       <CardHeader className="px-4 py-3 border-b">
@@ -141,6 +154,29 @@ const AIAssistant = () => {
                         : 'bg-muted'
                     }`}>
                       <p className="whitespace-pre-line">{message.content}</p>
+                      {message.links && message.links.length > 0 && (
+                        <div className="mt-3 space-y-3">
+                          {message.links.map((link, index) => (
+                            <div key={index} className="border rounded-lg p-3 bg-background">
+                              <div className="flex items-center gap-2 mb-1">
+                                <LinkIcon className="h-4 w-4" />
+                                <Link 
+                                  to={link.url}
+                                  className="text-primary hover:underline font-medium"
+                                >
+                                  {link.title}
+                                </Link>
+                                <span className="text-xs text-muted-foreground">
+                                  ({link.type})
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {link.summary}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className={`text-xs text-muted-foreground mt-1 ${message.role === 'user' ? 'text-right' : ''}`}>
                       {new Date(message.timestamp).toLocaleTimeString()}
@@ -188,3 +224,4 @@ const AIAssistant = () => {
 };
 
 export default AIAssistant;
+
