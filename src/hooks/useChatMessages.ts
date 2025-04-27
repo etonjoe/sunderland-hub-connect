@@ -33,7 +33,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         throw new Error("Invalid conversation ID format");
       }
       
-      // Fixed query to properly join with profiles using the sender_id field
+      // Using a separate query to join profiles data
       const { data: messagesData, error } = await supabase
         .from('chat_messages')
         .select(`
@@ -43,26 +43,35 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           group_id,
           created_at,
           read,
-          reply_to_id,
-          profiles!sender_id(name, avatar)
+          reply_to_id
         `)
         .eq('group_id', activeConversation)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
+
+      // For each message, get the sender profile in a separate step
+      const messagesWithProfiles = await Promise.all(messagesData.map(async (msg) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('name, avatar')
+          .eq('id', msg.sender_id)
+          .single();
+        
+        return {
+          id: msg.id,
+          content: msg.content,
+          senderId: msg.sender_id,
+          senderName: profileData?.name ?? 'Unknown User',
+          senderAvatar: profileData?.avatar ?? '',
+          groupId: msg.group_id,
+          timestamp: new Date(msg.created_at),
+          read: msg.read,
+          reply_to_id: msg.reply_to_id
+        };
+      }));
       
-      // Transform the data with proper type handling and nullish coalescing
-      setChatMessages(messagesData.map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        senderId: msg.sender_id,
-        senderName: msg.profiles?.name ?? 'Unknown User',
-        senderAvatar: msg.profiles?.avatar ?? '',
-        groupId: msg.group_id,
-        timestamp: new Date(msg.created_at),
-        read: msg.read,
-        reply_to_id: msg.reply_to_id
-      })));
+      setChatMessages(messagesWithProfiles);
     } catch (error) {
       console.error('Error fetching messages:', error);
       setError('Failed to load messages');
@@ -110,7 +119,8 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
       // Security: Sanitize input and validate
       const sanitizedInput = messageInput.trim();
       
-      const { data, error } = await supabase
+      // First, insert the message
+      const { data: messageData, error: messageError } = await supabase
         .from('chat_messages')
         .insert({
           content: sanitizedInput,
@@ -118,31 +128,29 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           group_id: activeConversation,
           reply_to_id: replyToId
         })
-        .select(`
-          id,
-          content,
-          sender_id,
-          group_id,
-          created_at,
-          read,
-          reply_to_id,
-          profiles!sender_id(name, avatar)
-        `)
+        .select()
         .single();
       
-      if (error) throw error;
+      if (messageError) throw messageError;
       
-      // Add the new message to the chat with proper type handling and nullish coalescing
+      // Then fetch the profile separately
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('name, avatar')
+        .eq('id', currentUserId)
+        .single();
+      
+      // Add the new message to the chat with profile data
       const newMessage: ChatMessage = {
-        id: data.id,
-        content: data.content,
-        senderId: data.sender_id,
-        senderName: data.profiles?.name ?? 'Unknown User',
-        senderAvatar: data.profiles?.avatar ?? '',
-        groupId: data.group_id,
-        timestamp: new Date(data.created_at),
+        id: messageData.id,
+        content: messageData.content,
+        senderId: messageData.sender_id,
+        senderName: profileData?.name ?? 'Unknown User',
+        senderAvatar: profileData?.avatar ?? '',
+        groupId: messageData.group_id,
+        timestamp: new Date(messageData.created_at),
         read: false,
-        reply_to_id: data.reply_to_id
+        reply_to_id: messageData.reply_to_id
       };
       
       setChatMessages(prev => [...prev, newMessage]);
