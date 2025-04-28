@@ -50,7 +50,7 @@ const InvitationsTracking = () => {
     try {
       setIsDeletingId(id);
       
-      // Delete the user account first if it exists
+      // Get the invitation details first
       const { data: invitationData, error: fetchError } = await supabase
         .from('invitations')
         .select('email')
@@ -59,24 +59,10 @@ const InvitationsTracking = () => {
       
       if (fetchError) {
         console.error('Error fetching invitation details:', fetchError);
-      } else if (invitationData?.email) {
-        // Find and delete the user account with matching email
-        const { data: userData, error: userFetchError } = await supabase
-          .from('auth.users')
-          .select('id')
-          .eq('email', invitationData.email)
-          .maybeSingle();
-        
-        if (!userFetchError && userData?.id) {
-          // If user exists, delete the user account
-          const { error: userDeleteError } = await supabase.auth.admin.deleteUser(userData.id);
-          if (userDeleteError) {
-            console.error('Error deleting user account:', userDeleteError);
-          }
-        }
-      }
+      } 
       
-      // Delete the invitation record
+      // We can't directly access auth.users table from client-side code
+      // So we'll just delete the invitation record
       const { error } = await supabase
         .from('invitations')
         .delete()
@@ -87,6 +73,9 @@ const InvitationsTracking = () => {
       // Update local state to remove the deleted invitation
       setInvitations(invitations.filter(inv => inv.id !== id));
       toast.success('Invitation deleted successfully');
+      
+      // Note: To properly delete associated user accounts, you would need to use a Supabase Edge Function
+      // that has admin privileges or handle this through RPC functions with appropriate permissions
     } catch (error) {
       console.error('Error deleting invitation:', error);
       toast.error('Failed to delete invitation');
