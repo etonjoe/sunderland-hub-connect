@@ -15,7 +15,15 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
   const MIN_FETCH_INTERVAL = 1000; // 1 second
 
   const fetchMessages = useCallback(async () => {
-    if (!currentUserId || !activeConversation) return;
+    if (!activeConversation) {
+      setChatMessages([]);
+      return;
+    }
+    
+    if (!currentUserId) {
+      console.error('No current user ID provided');
+      return;
+    }
     
     // Security: Rate limiting for API calls
     const now = Date.now();
@@ -85,15 +93,15 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
     fetchMessages();
     
     // Set up real-time subscription for new messages
-    if (activeConversation && currentUserId) {
+    if (activeConversation) {
       const subscription = supabase
-        .channel('chat_messages')
+        .channel(`chat_messages_${activeConversation}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'chat_messages',
           filter: `group_id=eq.${activeConversation}`
-        }, (payload) => {
+        }, () => {
           fetchMessages(); // Refresh messages when a new one arrives
         })
         .subscribe();
@@ -107,7 +115,10 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
   const handleSendMessage = async (e: React.FormEvent, replyToId?: string) => {
     e.preventDefault();
     
-    if (!messageInput.trim() || !currentUserId || !activeConversation) return;
+    if (!messageInput.trim() || !currentUserId || !activeConversation) {
+      console.error('Missing required data for sending message', { messageInput, currentUserId, activeConversation });
+      return;
+    }
     
     // Security: Maximum message length validation
     if (messageInput.length > 2000) {
@@ -119,6 +130,13 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
       // Security: Sanitize input and validate
       const sanitizedInput = messageInput.trim();
       
+      console.log('Sending message:', {
+        content: sanitizedInput,
+        sender_id: currentUserId,
+        group_id: activeConversation,
+        reply_to_id: replyToId || null
+      });
+      
       // First, insert the message
       const { data: messageData, error: messageError } = await supabase
         .from('chat_messages')
@@ -126,12 +144,15 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           content: sanitizedInput,
           sender_id: currentUserId,
           group_id: activeConversation,
-          reply_to_id: replyToId
+          reply_to_id: replyToId || null
         })
         .select()
         .single();
       
-      if (messageError) throw messageError;
+      if (messageError) {
+        console.error('Error details:', messageError);
+        throw messageError;
+      }
       
       // Then fetch the profile separately
       const { data: profileData } = await supabase

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,9 @@ import ChatSidebar from '@/components/chat/ChatSidebar';
 import ChatWindow from '@/components/chat/ChatWindow';
 import { useChatMessages } from '@/hooks/useChatMessages';
 import { useChatGroups } from '@/hooks/useChatGroups';
+import { toast } from 'sonner';
 
+// Placeholder direct chats for UI demonstration
 const DIRECT_CHATS = [
   {
     id: 'direct_1_3',
@@ -25,13 +28,21 @@ const DIRECT_CHATS = [
 
 const Chat = () => {
   const { user, isAuthenticated } = useAuth();
-  const [activeConversation, setActiveConversation] = useState<string>('1');
+  const [activeConversation, setActiveConversation] = useState<string>('');
   
   const {
     chatGroups,
     isLoadingGroups,
     handleGroupCreated
   } = useChatGroups(user?.id);
+
+  useEffect(() => {
+    // Set active conversation to first group if available and none is selected
+    if (chatGroups.length > 0 && !activeConversation) {
+      setActiveConversation(chatGroups[0].id);
+      console.log('Setting active conversation to:', chatGroups[0].id);
+    }
+  }, [chatGroups, activeConversation]);
 
   const {
     chatMessages,
@@ -72,6 +83,16 @@ const Chat = () => {
     });
   };
 
+  const handleConversationSelect = (conversationId: string) => {
+    console.log('Selecting conversation:', conversationId);
+    setActiveConversation(conversationId);
+  };
+
+  const handleGroupCreatedSuccess = () => {
+    handleGroupCreated();
+    toast.success("Chat group created successfully");
+  };
+
   return (
     <div className="container py-6 h-[calc(100vh-10rem)] animate-fade-in">
       <h1 className="text-3xl font-bold mb-6">Family Chat</h1>
@@ -82,21 +103,27 @@ const Chat = () => {
           directChats={DIRECT_CHATS}
           activeConversation={activeConversation}
           isLoadingGroups={isLoadingGroups}
-          onConversationSelect={setActiveConversation}
-          onGroupCreated={handleGroupCreated}
+          onConversationSelect={handleConversationSelect}
+          onGroupCreated={handleGroupCreatedSuccess}
         />
         
         <div className="md:col-span-3 flex flex-col h-full">
-          <ChatWindow
-            activeGroup={chatGroups.find(g => g.id === activeConversation)}
-            messages={chatMessages}
-            isLoadingMessages={isLoadingMessages}
-            currentUserId={user?.id}
-            messageInput={messageInput}
-            onMessageChange={setMessageInput}
-            onSendMessage={handleSendMessage}
-            formatTime={formatTime}
-          />
+          {activeConversation ? (
+            <ChatWindow
+              activeGroup={chatGroups.find(g => g.id === activeConversation)}
+              messages={chatMessages}
+              isLoadingMessages={isLoadingMessages}
+              currentUserId={user?.id}
+              messageInput={messageInput}
+              onMessageChange={setMessageInput}
+              onSendMessage={handleSendMessage}
+              formatTime={formatTime}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full bg-muted/30 rounded-lg">
+              <p className="text-muted-foreground">Select a conversation to start chatting</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

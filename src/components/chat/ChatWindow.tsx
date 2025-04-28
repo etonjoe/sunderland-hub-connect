@@ -37,6 +37,7 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(({
   const lastMessageTimeRef = useRef<number>(Date.now());
   const MAX_MESSAGES_PER_MINUTE = 20;
   const RATE_LIMIT_RESET_MS = 60000; // 1 minute
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Find the message being replied to when replyToId changes
   useEffect(() => {
@@ -47,6 +48,13 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(({
       setReplyingToMessage(null);
     }
   }, [replyToId, messages]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   const handleReply = (messageId: string) => {
     // Check if the message exists before setting it as a reply target
@@ -135,6 +143,7 @@ const ChatWindow = forwardRef<HTMLDivElement, ChatWindowProps>(({
                 />
               ))
             )}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
         
