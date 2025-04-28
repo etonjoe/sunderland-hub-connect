@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +20,7 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // Check if user is admin
-  const isAdmin = user?.role === 'admin';
-
-  if (!isAdmin) {
+  if (!user) {
     return null;
   }
 
@@ -42,6 +40,8 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
     setIsSubmitting(true);
     
     try {
+      console.log('Creating chat group:', { name, description, created_by: user.id });
+      
       // Insert the new chat group
       const { data: groupData, error: groupError } = await supabase
         .from('chat_groups')
@@ -53,7 +53,12 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
         .select('id')
         .single();
       
-      if (groupError) throw groupError;
+      if (groupError) {
+        console.error('Error creating chat group:', groupError);
+        throw groupError;
+      }
+      
+      console.log('Group created successfully:', groupData);
       
       // Add the creator as a member
       const { error: memberError } = await supabase
@@ -64,16 +69,19 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
           role: 'admin' // Group creator is an admin
         });
       
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error('Error adding member to chat group:', memberError);
+        throw memberError;
+      }
       
       toast.success('Chat group created successfully');
       setName('');
       setDescription('');
-      onGroupCreated();
       setOpen(false);
+      onGroupCreated();
     } catch (error) {
-      console.error('Error creating chat group:', error);
-      toast.error('Failed to create chat group');
+      console.error('Error in chat group creation flow:', error);
+      toast.error('Failed to create chat group. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

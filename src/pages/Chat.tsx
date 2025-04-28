@@ -39,8 +39,8 @@ const Chat = () => {
   useEffect(() => {
     // Set active conversation to first group if available and none is selected
     if (chatGroups.length > 0 && !activeConversation) {
+      console.log('Setting active conversation to first group:', chatGroups[0].id);
       setActiveConversation(chatGroups[0].id);
-      console.log('Setting active conversation to:', chatGroups[0].id);
     }
   }, [chatGroups, activeConversation]);
 
@@ -89,7 +89,23 @@ const Chat = () => {
   };
 
   const handleGroupCreatedSuccess = () => {
+    console.log('Group created success handler called');
     handleGroupCreated();
+    // After a short delay, refetch groups and select the new one
+    setTimeout(() => {
+      if (chatGroups.length > 0) {
+        // Find the most recently created group
+        const latestGroup = [...chatGroups].sort((a, b) => 
+          b.createdAt.getTime() - a.createdAt.getTime()
+        )[0];
+        
+        if (latestGroup) {
+          console.log('Setting active conversation to newly created group:', latestGroup.id);
+          setActiveConversation(latestGroup.id);
+        }
+      }
+    }, 500);
+    
     toast.success("Chat group created successfully");
   };
 
