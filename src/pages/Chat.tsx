@@ -33,16 +33,26 @@ const Chat = () => {
   const {
     chatGroups,
     isLoadingGroups,
-    handleGroupCreated
+    handleGroupCreated,
+    lastCreatedGroupId,
+    setLastCreatedGroupId
   } = useChatGroups(user?.id);
 
+  // Auto-select the first group or the newly created group
   useEffect(() => {
-    // Set active conversation to first group if available and none is selected
+    if (lastCreatedGroupId) {
+      console.log('Setting active conversation to newly created group:', lastCreatedGroupId);
+      setActiveConversation(lastCreatedGroupId);
+      setLastCreatedGroupId(null); // Reset after setting
+      return;
+    }
+    
+    // Only set to first group if no active conversation is selected
     if (chatGroups.length > 0 && !activeConversation) {
       console.log('Setting active conversation to first group:', chatGroups[0].id);
       setActiveConversation(chatGroups[0].id);
     }
-  }, [chatGroups, activeConversation]);
+  }, [chatGroups, activeConversation, lastCreatedGroupId, setLastCreatedGroupId]);
 
   const {
     chatMessages,
@@ -88,24 +98,9 @@ const Chat = () => {
     setActiveConversation(conversationId);
   };
 
-  const handleGroupCreatedSuccess = () => {
-    console.log('Group created success handler called');
-    handleGroupCreated();
-    // After a short delay, refetch groups and select the new one
-    setTimeout(() => {
-      if (chatGroups.length > 0) {
-        // Find the most recently created group
-        const latestGroup = [...chatGroups].sort((a, b) => 
-          b.createdAt.getTime() - a.createdAt.getTime()
-        )[0];
-        
-        if (latestGroup) {
-          console.log('Setting active conversation to newly created group:', latestGroup.id);
-          setActiveConversation(latestGroup.id);
-        }
-      }
-    }, 500);
-    
+  const handleGroupCreatedSuccess = (groupId?: string) => {
+    console.log('Group created success handler called with ID:', groupId);
+    handleGroupCreated(groupId);
     toast.success("Chat group created successfully");
   };
 
@@ -137,7 +132,13 @@ const Chat = () => {
             />
           ) : (
             <div className="flex items-center justify-center h-full bg-muted/30 rounded-lg">
-              <p className="text-muted-foreground">Select a conversation to start chatting</p>
+              <p className="text-muted-foreground">
+                {isLoadingGroups 
+                  ? "Loading chat groups..." 
+                  : chatGroups.length === 0 
+                    ? "Create a new group chat to start chatting" 
+                    : "Select a conversation to start chatting"}
+              </p>
             </div>
           )}
         </div>

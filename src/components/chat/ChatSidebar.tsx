@@ -15,7 +15,7 @@ interface ChatSidebarProps {
   activeConversation: string;
   isLoadingGroups: boolean;
   onConversationSelect: (id: string) => void;
-  onGroupCreated: () => void;
+  onGroupCreated: (groupId?: string) => void;
 }
 
 const ChatSidebar = ({
@@ -35,17 +35,21 @@ const ChatSidebar = ({
             <div className="px-2 py-1 text-sm text-muted-foreground">Loading...</div>
           ) : (
             <>
-              {chatGroups.map(group => (
-                <Button
-                  key={group.id}
-                  variant="ghost"
-                  className={`w-full justify-start ${activeConversation === group.id ? 'bg-muted' : ''}`}
-                  onClick={() => onConversationSelect(group.id)}
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  <span className="truncate">{group.name}</span>
-                </Button>
-              ))}
+              {chatGroups.length > 0 ? (
+                chatGroups.map(group => (
+                  <Button
+                    key={group.id}
+                    variant="ghost"
+                    className={`w-full justify-start ${activeConversation === group.id ? 'bg-muted' : ''}`}
+                    onClick={() => onConversationSelect(group.id)}
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    <span className="truncate">{group.name}</span>
+                  </Button>
+                ))
+              ) : (
+                <div className="px-2 py-1 text-sm text-muted-foreground">No groups yet</div>
+              )}
               <CreateChatGroup onGroupCreated={onGroupCreated} />
             </>
           )}

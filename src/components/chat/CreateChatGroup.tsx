@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface CreateChatGroupProps {
-  onGroupCreated: () => void;
+  onGroupCreated: (groupId?: string) => void;
 }
 
 const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
@@ -78,7 +78,7 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
       setName('');
       setDescription('');
       setOpen(false);
-      onGroupCreated();
+      onGroupCreated(groupData.id);
     } catch (error) {
       console.error('Error in chat group creation flow:', error);
       toast.error('Failed to create chat group. Please try again.');
