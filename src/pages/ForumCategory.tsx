@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -213,7 +214,7 @@ const ForumCategoryPage = () => {
     // But we need to pass this to ForumHeader
   };
 
-  // Fix the issue here - make sure we're using the imported ForumPost type
+  // Explicitly import the ForumPost type from @/types to ensure we use the correct definition
   const handleForumSelect = (post: ForumPost) => {
     setSelectedForum(post);
   };
