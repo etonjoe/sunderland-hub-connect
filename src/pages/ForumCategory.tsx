@@ -13,6 +13,8 @@ import SearchBar from '@/features/forum/components/SearchBar';
 import ForumHeader from '@/features/forum/components/ForumHeader';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Remove any duplicate or conflicting interface definitions
+
 const ForumCategoryPage = () => {
   const { categoryId } = useParams();
   const navigate = useNavigate();
@@ -214,7 +216,7 @@ const ForumCategoryPage = () => {
     // But we need to pass this to ForumHeader
   };
 
-  // Explicitly import the ForumPost type from @/types to ensure we use the correct definition
+  // Use the ForumPost type from @/types
   const handleForumSelect = (post: ForumPost) => {
     setSelectedForum(post);
   };

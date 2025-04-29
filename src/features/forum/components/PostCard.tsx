@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, Heart } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -9,22 +8,11 @@ import { useForumLike } from '../hooks/useForumLike';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { ForumPost } from '@/types'; // Import ForumPost from the central types file
 
 interface Category {
   id: string;
   name: string;
-}
-interface ForumPost {
-  id: string;
-  title: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  createdAt: Date;
-  updatedAt: Date;
-  categoryId: string;
-  likesCount: number;
-  commentsCount: number;
 }
 interface PostCardProps {
   post: ForumPost;
