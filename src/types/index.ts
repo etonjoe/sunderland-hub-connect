@@ -1,5 +1,4 @@
 
-
 export interface UserProfile {
   id?: string;
   name: string;
@@ -46,7 +45,7 @@ export interface ForumPost {
   id: string;
   title: string;
   content: string;
-  categoryId?: string;
+  categoryId?: string; // Make it optional as it appears to be used as optional in the codebase
   authorId: string;
   authorName: string;
   authorAvatar?: string;
