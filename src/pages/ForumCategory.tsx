@@ -213,6 +213,7 @@ const ForumCategoryPage = () => {
     // But we need to pass this to ForumHeader
   };
 
+  // Fix the issue here - make sure we're using the imported ForumPost type
   const handleForumSelect = (post: ForumPost) => {
     setSelectedForum(post);
   };
