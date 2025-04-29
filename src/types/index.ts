@@ -1,4 +1,5 @@
 
+
 export interface UserProfile {
   id?: string;
   name: string;
@@ -16,6 +17,15 @@ export interface User {
   role?: string;
   isPremium?: boolean;
   createdAt?: Date;
+  bio?: string;
+  location?: string;
+  mobileNumber?: string;
+  whatsappNumber?: string;
+  jobRole?: string;
+  education?: string;
+  religion?: string;
+  address?: string;
+  city?: string;
 }
 
 export interface Resource {

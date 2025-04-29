@@ -22,6 +22,7 @@ const ForumCategoryPage = () => {
   const [notFound, setNotFound] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, user } = useAuth();
+  const [selectedForum, setSelectedForum] = useState<ForumPost | null>(null);
 
   useEffect(() => {
     const fetchCategoryData = async () => {
@@ -91,9 +92,9 @@ const ForumCategoryPage = () => {
           
           const formattedPosts: ForumPost[] = postsData.map(post => ({
             id: post.id,
-            categoryId: post.category_id,
             title: post.title,
             content: post.content,
+            categoryId: post.category_id || undefined, // Make it optional to match the interface
             authorId: post.author_id,
             authorName: authorMap[post.author_id] || 'Unknown User',
             authorAvatar: undefined,
@@ -180,9 +181,9 @@ const ForumCategoryPage = () => {
       
       const formattedPosts: ForumPost[] = data.map(post => ({
         id: post.id,
-        categoryId: post.category_id,
         title: post.title,
         content: post.content,
+        categoryId: post.category_id || undefined, // Make it optional to match the interface
         authorId: post.author_id,
         authorName: authorMap[post.author_id] || 'Unknown User',
         authorAvatar: undefined,
@@ -210,6 +211,10 @@ const ForumCategoryPage = () => {
   const fetchCategories = async () => {
     // This is a placeholder since we're only concerned with one category
     // But we need to pass this to ForumHeader
+  };
+
+  const handleForumSelect = (post: ForumPost) => {
+    setSelectedForum(post);
   };
 
   return (
