@@ -7,6 +7,8 @@ import KeyMetrics from '@/components/admin/dashboard/KeyMetrics';
 import ActivityMetrics from '@/components/admin/dashboard/ActivityMetrics';
 import StatCharts from '@/components/admin/dashboard/StatCharts';
 import MembershipTable from '@/components/admin/MembershipTable';
+import { Badge } from '@/components/ui/badge';
+import { Wifi } from 'lucide-react';
 import type { User } from '@/types';
 
 interface DashboardProps {
@@ -33,10 +35,16 @@ const Dashboard = ({ users }: DashboardProps) => {
 
   return (
     <div className="space-y-8">
-      <TimeFilter 
-        selectedPeriod={selectedPeriod}
-        onPeriodChange={setSelectedPeriod}
-      />
+      <div className="flex items-center justify-between">
+        <TimeFilter 
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={setSelectedPeriod}
+        />
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <Wifi className="h-3 w-3" />
+          <span>Real-time updates enabled</span>
+        </Badge>
+      </div>
       
       <KeyMetrics
         currentStats={latestStats}

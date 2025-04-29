@@ -1,7 +1,10 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from 'recharts';
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
+  LineChart, Line, CartesianGrid, Legend, Animated 
+} from 'recharts';
 
 interface AnalyticsChartProps {
   title: string;
@@ -39,7 +42,14 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
               <Tooltip />
               <Legend />
               {dataKeys.map((dk) => (
-                <Bar key={dk.key} dataKey={dk.key} name={dk.name} fill={dk.color} />
+                <Bar 
+                  key={dk.key} 
+                  dataKey={dk.key} 
+                  name={dk.name} 
+                  fill={dk.color}
+                  animationDuration={300}
+                  animationEasing="ease-in-out"
+                />
               ))}
             </BarChart>
           ) : (
@@ -56,7 +66,9 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
                   dataKey={dk.key} 
                   name={dk.name} 
                   stroke={dk.color} 
-                  strokeWidth={2} 
+                  strokeWidth={2}
+                  animationDuration={300}
+                  animationEasing="ease-in-out" 
                 />
               ))}
             </LineChart>

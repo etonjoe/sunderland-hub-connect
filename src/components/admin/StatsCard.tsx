@@ -13,6 +13,7 @@ interface StatsCardProps {
     isPositive: boolean;
     description: string;
   };
+  highlight?: boolean;
 }
 
 const StatsCard: React.FC<StatsCardProps> = ({
@@ -20,16 +21,17 @@ const StatsCard: React.FC<StatsCardProps> = ({
   value,
   description,
   icon,
-  trend
+  trend,
+  highlight = false
 }) => {
   return (
-    <Card>
+    <Card className={`transition-all duration-300 ${highlight ? 'shadow-md ring-2 ring-blue-300 dark:ring-blue-800' : ''}`}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <div className="h-4 w-4 text-muted-foreground">{icon}</div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className={`text-2xl font-bold ${highlight ? 'text-blue-600 dark:text-blue-400' : ''}`}>{value}</div>
         {description && <p className="text-xs text-muted-foreground">{description}</p>}
         {trend && (
           <div className="mt-2 flex items-center">
