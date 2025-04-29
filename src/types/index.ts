@@ -1,3 +1,4 @@
+
 export interface UserProfile {
   id?: string;
   name: string;
@@ -7,6 +8,16 @@ export interface UserProfile {
   isPremium?: boolean;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role?: string;
+  isPremium?: boolean;
+  createdAt?: Date;
+}
+
 export interface Resource {
   id: string;
   title: string;
@@ -14,6 +25,11 @@ export interface Resource {
   file_url: string;
   category: string;
   created_at: string;
+  fileType?: string;
+  authorId?: string;
+  authorName?: string;
+  createdAt?: Date;
+  isPremium?: boolean;
 }
 
 export interface ForumPost {
@@ -64,4 +80,42 @@ export interface ChatMessage {
   timestamp: Date;
   read: boolean;
   reply_to_id?: string;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  createdAt: Date;
+  isPinned: boolean;
+}
+
+export interface MembershipStat {
+  id: string;
+  period: string;
+  totalUsers: number;
+  premiumUsers: number;
+  retentionRate: number;
+  createdAt: Date;
+}
+
+export interface ActivityStat {
+  id: string;
+  period: string;
+  forumPosts: number;
+  chatMessages: number;
+  resourceUploads: number;
+  activeUsers: number;
+  createdAt: Date;
+}
+
+export interface RevenueStat {
+  id: string;
+  period: string;
+  amount: number;
+  subscriptions: number;
+  renewals: number;
+  createdAt: Date;
 }
