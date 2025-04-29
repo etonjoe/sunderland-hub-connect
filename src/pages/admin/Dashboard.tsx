@@ -40,7 +40,7 @@ const Dashboard = ({ users }: DashboardProps) => {
           selectedPeriod={selectedPeriod}
           onPeriodChange={setSelectedPeriod}
         />
-        <Badge variant="secondary" className="flex items-center gap-1">
+        <Badge variant="secondary" className="flex items-center gap-1 animate-pulse">
           <Wifi className="h-3 w-3" />
           <span>Real-time updates enabled</span>
         </Badge>

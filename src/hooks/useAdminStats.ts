@@ -146,9 +146,12 @@ export function useAdminStats() {
       )
       .subscribe();
 
+    console.log('Real-time channel subscribed:', channel.state);
+
     // Cleanup function to unsubscribe from the channel
     return () => {
       supabase.removeChannel(channel);
+      console.log('Real-time channel unsubscribed');
     };
   }, [refetchMembership, refetchActivity, refetchRevenue]);
 
