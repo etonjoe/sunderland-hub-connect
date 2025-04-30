@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { PlusCircle } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';  // Updated this import path
 import { useAuth } from '@/contexts/AuthContext';
 import { ForumCategory } from '@/types';
 
@@ -56,6 +56,8 @@ const CreateForumPost = ({ categories, onPostCreated, defaultCategoryId }: Creat
 
     setIsSubmitting(true);
     try {
+      console.log('Creating post with data:', data);
+      
       const { error } = await supabase
         .from('forum_posts')
         .insert({

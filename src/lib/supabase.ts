@@ -1,21 +1,11 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { User } from '@/types';
 import { toast } from 'sonner';
 
-const supabaseUrl = 'https://gpbwlvooyvqsjuytykgo.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwYndsdm9veXZxc2p1eXR5a2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5MzMwOTUsImV4cCI6MjA2MDUwOTA5NX0.aMhpjRQHqQ79YaKPXWFgxrxKOrogje8i35jL6mf01OQ';
+// Re-export the client from the integrations folder to maintain consistency
+export { supabase } from '@/integrations/supabase/client';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    storage: localStorage,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
-  }
-});
-
+// Keep the other utility functions
 export const mapSupabaseUser = (supabaseUser: any): User => ({
   id: supabaseUser.id,
   email: supabaseUser.email || '',
@@ -28,12 +18,15 @@ export const mapSupabaseUser = (supabaseUser: any): User => ({
 
 // Helper function to check if supabase is properly configured
 export const isSupabaseConfigured = (): boolean => {
+  const supabaseUrl = 'https://gpbwlvooyvqsjuytykgo.supabase.co';
+  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwYndsdm9veXZxc2p1eXR5a2dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5MzMwOTUsImV4cCI6MjA2MDUwOTA5NX0.aMhpjRQHqQ79YaKPXWFgxrxKOrogje8i35jL6mf01OQ';
   return supabaseUrl.length > 0 && supabaseAnonKey.length > 0;
 };
 
 // Test connection function
 export const testSupabaseConnection = async (): Promise<boolean> => {
   try {
+    const { supabase } = await import('@/integrations/supabase/client');
     const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
     
     if (error) {

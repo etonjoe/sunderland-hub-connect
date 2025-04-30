@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { ForumPost, ForumCategory } from '@/types';
 
@@ -15,6 +14,7 @@ export const useForumData = () => {
   const fetchPosts = async () => {
     setIsLoadingPosts(true);
     try {
+      console.log('Fetching posts...');
       const { data: postsData, error: postsError } = await supabase
         .from('forum_posts')
         .select(`
@@ -29,6 +29,8 @@ export const useForumData = () => {
         .order('created_at', { ascending: false });
       
       if (postsError) throw postsError;
+      
+      console.log('Posts fetched:', postsData);
       
       const authorIds = [...new Set(postsData.map(post => post.author_id))];
       const { data: authorsData, error: authorsError } = await supabase

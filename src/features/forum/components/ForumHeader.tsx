@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import CreateForumPost from "@/components/forum/CreateForumPost";
 import CreateForumCategory from "@/components/forum/CreateForumCategory";
 import { ForumCategory } from '@/types';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';  // Updated this import path
 
 interface ForumHeaderProps {
   isAuthenticated: boolean;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -37,6 +36,8 @@ const ForumCategoryPage = () => {
 
       setIsLoading(true);
       try {
+        console.log('Fetching category data for categoryId:', categoryId);
+        
         const { data: categoryData, error: categoryError } = await supabase
           .from('forum_categories')
           .select('id, name, description')
@@ -49,6 +50,8 @@ const ForumCategoryPage = () => {
           setIsLoading(false);
           return;
         }
+        
+        console.log('Category data fetched:', categoryData);
         
         const formattedCategory: ForumCategoryType = {
           id: categoryData.id,
