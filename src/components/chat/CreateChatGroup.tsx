@@ -78,7 +78,11 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
       setName('');
       setDescription('');
       setOpen(false);
-      onGroupCreated(groupData.id);
+      
+      // Wait a brief moment to allow the database to process the insert
+      setTimeout(() => {
+        onGroupCreated(groupData.id);
+      }, 500);
     } catch (error) {
       console.error('Error in chat group creation flow:', error);
       toast.error('Failed to create chat group. Please try again.');

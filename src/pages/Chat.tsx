@@ -35,8 +35,18 @@ const Chat = () => {
     isLoadingGroups,
     handleGroupCreated,
     lastCreatedGroupId,
-    setLastCreatedGroupId
+    setLastCreatedGroupId,
+    refetchGroups
   } = useChatGroups(user?.id);
+
+  const {
+    chatMessages,
+    isLoadingMessages,
+    messageInput,
+    setMessageInput,
+    handleSendMessage,
+    refetchMessages
+  } = useChatMessages(activeConversation, user?.id);
 
   // Auto-select the first group or the newly created group
   useEffect(() => {
@@ -51,16 +61,19 @@ const Chat = () => {
     if (chatGroups.length > 0 && !activeConversation) {
       console.log('Setting active conversation to first group:', chatGroups[0].id);
       setActiveConversation(chatGroups[0].id);
+    } else if (chatGroups.length === 0 && activeConversation) {
+      // If we had an active conversation but now groups are empty, reset it
+      setActiveConversation('');
     }
   }, [chatGroups, activeConversation, lastCreatedGroupId, setLastCreatedGroupId]);
 
-  const {
-    chatMessages,
-    isLoadingMessages,
-    messageInput,
-    setMessageInput,
-    handleSendMessage
-  } = useChatMessages(activeConversation, user?.id);
+  // Reset messages when changing active conversation
+  useEffect(() => {
+    if (activeConversation && user?.id) {
+      console.log('Active conversation changed, fetching new messages');
+      refetchMessages();
+    }
+  }, [activeConversation, user?.id, refetchMessages]);
   
   const isPremium = user?.isPremium || false;
   
@@ -100,7 +113,12 @@ const Chat = () => {
 
   const handleGroupCreatedSuccess = (groupId?: string) => {
     console.log('Group created success handler called with ID:', groupId);
+    toast.success("Chat group created successfully");
     handleGroupCreated(groupId);
+    // Force refresh the groups
+    setTimeout(() => {
+      refetchGroups();
+    }, 500);
   };
 
   return (
