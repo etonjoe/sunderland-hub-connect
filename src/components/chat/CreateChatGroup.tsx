@@ -79,10 +79,8 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
       setDescription('');
       setOpen(false);
       
-      // Wait a brief moment to allow the database to process the insert
-      setTimeout(() => {
-        onGroupCreated(groupData.id);
-      }, 500);
+      // Notify parent component about the new group
+      onGroupCreated(groupData.id);
     } catch (error) {
       console.error('Error in chat group creation flow:', error);
       toast.error('Failed to create chat group. Please try again.');

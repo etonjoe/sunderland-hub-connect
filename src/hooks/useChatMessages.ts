@@ -40,24 +40,6 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
     try {
       console.log('Fetching messages for conversation:', activeConversation);
       
-      // Validate user is a member of this group first
-      const { data: membershipData, error: membershipError } = await supabase
-        .from('chat_group_members')
-        .select('user_id')
-        .eq('group_id', activeConversation)
-        .eq('user_id', currentUserId)
-        .maybeSingle();
-      
-      if (membershipError) {
-        console.error('Error checking group membership:', membershipError);
-        throw new Error('Failed to verify group membership');
-      }
-      
-      if (!membershipData) {
-        console.error('User is not a member of this group');
-        throw new Error('You are not a member of this chat group');
-      }
-      
       // Security: Validate UUID format to prevent SQL injection
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeConversation)) {
         throw new Error("Invalid conversation ID format");
@@ -179,21 +161,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         reply_to_id: replyToId || null
       });
       
-      // First, check that the user is a member of this group
-      const { data: membershipData, error: membershipError } = await supabase
-        .from('chat_group_members')
-        .select('user_id')
-        .eq('group_id', activeConversation)
-        .eq('user_id', currentUserId)
-        .maybeSingle();
-        
-      if (membershipError || !membershipData) {
-        console.error('Error checking membership or user is not a member:', membershipError);
-        toast.error("You are not a member of this chat group");
-        return;
-      }
-      
-      // Then insert the message
+      // Insert the message
       const { data: messageData, error: messageError } = await supabase
         .from('chat_messages')
         .insert({

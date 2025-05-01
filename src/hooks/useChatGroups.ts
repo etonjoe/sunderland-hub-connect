@@ -19,38 +19,21 @@ export const useChatGroups = (userId?: string) => {
     try {
       console.log('Fetching chat groups for user:', userId);
       
-      const { data: membershipData, error: membershipError } = await supabase
-        .from('chat_group_members')
-        .select('group_id')
-        .eq('user_id', userId);
+      const { data: groupsData, error: groupsError } = await supabase
+        .from('chat_groups')
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      if (membershipError) {
-        console.error('Error fetching memberships:', membershipError);
-        toast.error('Failed to load chat group memberships');
+      if (groupsError) {
+        console.error('Error fetching groups:', groupsError);
+        toast.error('Failed to load chat groups');
         setIsLoadingGroups(false);
         return [];
       }
       
-      console.log('User memberships:', membershipData);
+      console.log('Groups data:', groupsData);
       
-      if (membershipData && membershipData.length > 0) {
-        const groupIds = membershipData.map(item => item.group_id);
-        
-        const { data: groupsData, error: groupsError } = await supabase
-          .from('chat_groups')
-          .select('*')
-          .in('id', groupIds)
-          .order('created_at', { ascending: false });
-        
-        if (groupsError) {
-          console.error('Error fetching groups:', groupsError);
-          toast.error('Failed to load chat groups');
-          setIsLoadingGroups(false);
-          return [];
-        }
-        
-        console.log('Groups data:', groupsData);
-        
+      if (groupsData && groupsData.length > 0) {
         const formattedGroups = groupsData.map(group => ({
           id: group.id,
           name: group.name,
@@ -63,8 +46,8 @@ export const useChatGroups = (userId?: string) => {
         setIsLoadingGroups(false);
         return formattedGroups;
       } else {
-        // No memberships found
-        console.log('No group memberships found for user');
+        // No groups found
+        console.log('No chat groups found for user');
         setChatGroups([]);
         setIsLoadingGroups(false);
         return [];
@@ -81,25 +64,8 @@ export const useChatGroups = (userId?: string) => {
     if (userId) {
       fetchChatGroups();
       
-      // Set up real-time subscription for chat_group_members changes
+      // Set up real-time subscription for chat_groups changes
       const channel = supabase
-        .channel('chat_group_members_changes')
-        .on('postgres_changes', 
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'chat_group_members',
-            filter: `user_id=eq.${userId}`
-          }, 
-          (payload) => {
-            console.log('New chat group membership detected:', payload);
-            fetchChatGroups();
-          }
-        )
-        .subscribe();
-      
-      // Also set up subscription for chat_groups changes (for updates to group names, etc.)
-      const groupsChannel = supabase
         .channel('chat_groups_changes')
         .on('postgres_changes',
           {
@@ -114,9 +80,25 @@ export const useChatGroups = (userId?: string) => {
         )
         .subscribe();
       
+      // Set up real-time subscription for chat_group_members changes
+      const membersChannel = supabase
+        .channel('chat_group_members_changes')
+        .on('postgres_changes', 
+          {
+            event: '*',
+            schema: 'public',
+            table: 'chat_group_members'
+          }, 
+          (payload) => {
+            console.log('Chat group membership changed:', payload);
+            fetchChatGroups();
+          }
+        )
+        .subscribe();
+      
       return () => {
         supabase.removeChannel(channel);
-        supabase.removeChannel(groupsChannel);
+        supabase.removeChannel(membersChannel);
       };
     } else {
       setChatGroups([]);
