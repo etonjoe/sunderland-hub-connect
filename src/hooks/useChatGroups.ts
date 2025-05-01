@@ -12,6 +12,7 @@ export const useChatGroups = (userId?: string) => {
   const fetchChatGroups = useCallback(async () => {
     if (!userId) {
       setIsLoadingGroups(false);
+      setChatGroups([]);
       return [];
     }
     
@@ -49,6 +50,7 @@ export const useChatGroups = (userId?: string) => {
         const formattedGroups = groupsData.map(group => ({
           id: group.id,
           name: group.name,
+          description: group.description,
           memberIds: [],
           createdAt: new Date(group.created_at)
         }));
@@ -75,7 +77,7 @@ export const useChatGroups = (userId?: string) => {
     
     // Set up real-time subscription for chat_group_members changes
     if (userId) {
-      const subscription = supabase
+      const channel = supabase
         .channel('chat_group_members_changes')
         .on('postgres_changes', 
           {
@@ -84,15 +86,15 @@ export const useChatGroups = (userId?: string) => {
             table: 'chat_group_members',
             filter: `user_id=eq.${userId}`
           }, 
-          () => {
-            console.log('New chat group membership detected, refreshing groups');
+          (payload) => {
+            console.log('New chat group membership detected:', payload);
             fetchChatGroups();
           }
         )
         .subscribe();
       
       return () => {
-        supabase.removeChannel(subscription);
+        supabase.removeChannel(channel);
       };
     }
   }, [fetchChatGroups, userId]);

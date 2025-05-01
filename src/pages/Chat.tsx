@@ -101,7 +101,6 @@ const Chat = () => {
   const handleGroupCreatedSuccess = (groupId?: string) => {
     console.log('Group created success handler called with ID:', groupId);
     handleGroupCreated(groupId);
-    toast.success("Chat group created successfully");
   };
 
   return (
