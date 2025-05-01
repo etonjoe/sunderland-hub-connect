@@ -19,16 +19,37 @@ export const useChatGroups = (userId?: string) => {
     try {
       console.log('Fetching chat groups for user:', userId);
       
+      // Get all chat groups where the user is a member
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('chat_group_members')
+        .select('group_id')
+        .eq('user_id', userId);
+      
+      if (membershipError) {
+        console.error('Error fetching group memberships:', membershipError);
+        throw membershipError;
+      }
+      
+      if (!membershipData || membershipData.length === 0) {
+        console.log('User is not a member of any groups');
+        setChatGroups([]);
+        setIsLoadingGroups(false);
+        return [];
+      }
+      
+      // Extract the group IDs
+      const groupIds = membershipData.map(item => item.group_id);
+      
+      // Get the group details
       const { data: groupsData, error: groupsError } = await supabase
         .from('chat_groups')
         .select('*')
+        .in('id', groupIds)
         .order('created_at', { ascending: false });
       
       if (groupsError) {
         console.error('Error fetching groups:', groupsError);
-        toast.error('Failed to load chat groups');
-        setIsLoadingGroups(false);
-        return [];
+        throw groupsError;
       }
       
       console.log('Groups data:', groupsData);
@@ -52,9 +73,9 @@ export const useChatGroups = (userId?: string) => {
         setIsLoadingGroups(false);
         return [];
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching chat groups:', error);
-      toast.error('Failed to load chat groups');
+      toast.error(`Failed to load chat groups: ${error?.message || 'Please try again'}`);
       setIsLoadingGroups(false);
       return [];
     }
@@ -113,7 +134,10 @@ export const useChatGroups = (userId?: string) => {
       if (groupId) {
         setLastCreatedGroupId(groupId);
       }
-      await fetchChatGroups();
+      // Add a small delay to ensure the database has been updated
+      setTimeout(async () => {
+        await fetchChatGroups();
+      }, 500);
     }
   }, [userId, fetchChatGroups]);
 

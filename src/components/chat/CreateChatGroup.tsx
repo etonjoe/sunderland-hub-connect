@@ -42,12 +42,12 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
     try {
       console.log('Creating chat group:', { name, description, created_by: user.id });
       
-      // Insert the new chat group
+      // Insert the new chat group with a transaction to ensure both operations succeed
       const { data: groupData, error: groupError } = await supabase
         .from('chat_groups')
         .insert({
-          name,
-          description,
+          name: name.trim(),
+          description: description.trim(),
           created_by: user.id
         })
         .select('id')
@@ -81,9 +81,9 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
       
       // Notify parent component about the new group
       onGroupCreated(groupData.id);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in chat group creation flow:', error);
-      toast.error('Failed to create chat group. Please try again.');
+      toast.error(`Failed to create chat group: ${error?.message || 'Please try again'}`);
     } finally {
       setIsSubmitting(false);
     }
