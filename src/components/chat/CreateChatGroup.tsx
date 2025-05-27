@@ -42,12 +42,12 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
     try {
       console.log('Creating chat group:', { name, description, created_by: user.id });
       
-      // Insert the new chat group with a transaction to ensure both operations succeed
+      // Insert the new chat group
       const { data: groupData, error: groupError } = await supabase
         .from('chat_groups')
         .insert({
           name: name.trim(),
-          description: description.trim(),
+          description: description.trim() || null,
           created_by: user.id
         })
         .select('id')
@@ -56,6 +56,10 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
       if (groupError) {
         console.error('Error creating chat group:', groupError);
         throw groupError;
+      }
+      
+      if (!groupData) {
+        throw new Error('No group data returned');
       }
       
       console.log('Group created successfully:', groupData);
@@ -83,7 +87,11 @@ const CreateChatGroup = ({ onGroupCreated }: CreateChatGroupProps) => {
       onGroupCreated(groupData.id);
     } catch (error: any) {
       console.error('Error in chat group creation flow:', error);
-      toast.error(`Failed to create chat group: ${error?.message || 'Please try again'}`);
+      if (error?.message?.includes('row-level security')) {
+        toast.error('Permission denied. Please make sure you are logged in.');
+      } else {
+        toast.error(`Failed to create chat group: ${error?.message || 'Please try again'}`);
+      }
     } finally {
       setIsSubmitting(false);
     }

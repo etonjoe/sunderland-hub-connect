@@ -45,7 +45,22 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         throw new Error("Invalid conversation ID format");
       }
       
-      // Using a separate query to join profiles data
+      // First, verify user is a member of this group
+      const { data: membershipCheck, error: membershipError } = await supabase
+        .from('chat_group_members')
+        .select('group_id')
+        .eq('group_id', activeConversation)
+        .eq('user_id', currentUserId)
+        .single();
+      
+      if (membershipError || !membershipCheck) {
+        console.log('User is not a member of this group');
+        setChatMessages([]);
+        setIsLoadingMessages(false);
+        return;
+      }
+      
+      // Fetch messages with sender profile data in a single query
       const { data: messagesData, error } = await supabase
         .from('chat_messages')
         .select(`
@@ -55,7 +70,11 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           group_id,
           created_at,
           read,
-          reply_to_id
+          reply_to_id,
+          profiles!chat_messages_sender_id_fkey (
+            name,
+            avatar
+          )
         `)
         .eq('group_id', activeConversation)
         .order('created_at', { ascending: true });
@@ -73,33 +92,20 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
       }
 
       console.log(`Fetched ${messagesData.length} messages`);
-
-      // For each message, get the sender profile in a separate step
-      const messagesWithProfiles = await Promise.all(messagesData.map(async (msg) => {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('name, avatar')
-          .eq('id', msg.sender_id)
-          .single();
-        
-        if (profileError) {
-          console.warn(`Could not fetch profile for sender ${msg.sender_id}:`, profileError);
-        }
-        
-        return {
-          id: msg.id,
-          content: msg.content,
-          senderId: msg.sender_id,
-          senderName: profileData?.name ?? 'Unknown User',
-          senderAvatar: profileData?.avatar ?? '',
-          groupId: msg.group_id,
-          timestamp: new Date(msg.created_at),
-          read: msg.read,
-          reply_to_id: msg.reply_to_id
-        };
+      
+      const formattedMessages = messagesData.map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        senderId: msg.sender_id,
+        senderName: msg.profiles?.name ?? 'Unknown User',
+        senderAvatar: msg.profiles?.avatar ?? '',
+        groupId: msg.group_id,
+        timestamp: new Date(msg.created_at),
+        read: msg.read,
+        reply_to_id: msg.reply_to_id
       }));
       
-      setChatMessages(messagesWithProfiles);
+      setChatMessages(formattedMessages);
       setIsLoadingMessages(false);
     } catch (error: any) {
       console.error('Error fetching messages:', error);
@@ -170,7 +176,15 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           group_id: activeConversation,
           reply_to_id: replyToId || null
         })
-        .select()
+        .select(`
+          id,
+          content,
+          sender_id,
+          group_id,
+          created_at,
+          read,
+          reply_to_id
+        `)
         .single();
       
       if (messageError) {
@@ -178,7 +192,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         throw messageError;
       }
       
-      // Then fetch the profile separately
+      // Get the sender profile
       const { data: profileData } = await supabase
         .from('profiles')
         .select('name, avatar')
