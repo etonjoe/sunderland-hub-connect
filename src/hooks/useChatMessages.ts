@@ -60,50 +60,63 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
         return;
       }
       
-      // Fetch messages with sender profile data in a single query
-      const { data: messagesData, error } = await supabase
+      // Fetch messages first
+      const { data: messagesData, error: messagesError } = await supabase
         .from('chat_messages')
-        .select(`
-          id,
-          content,
-          sender_id,
-          group_id,
-          created_at,
-          read,
-          reply_to_id,
-          profiles!chat_messages_sender_id_fkey (
-            name,
-            avatar
-          )
-        `)
+        .select('*')
         .eq('group_id', activeConversation)
         .order('created_at', { ascending: true });
       
-      if (error) {
-        console.error('Error fetching messages:', error);
-        throw error;
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+        throw messagesError;
       }
 
-      if (!messagesData) {
+      if (!messagesData || messagesData.length === 0) {
         console.log('No messages found for this conversation');
         setChatMessages([]);
         setIsLoadingMessages(false);
         return;
       }
 
+      // Get unique sender IDs
+      const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
+      
+      // Fetch profiles for all senders
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, avatar')
+        .in('id', senderIds);
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        // Continue without profile data rather than failing completely
+      }
+
       console.log(`Fetched ${messagesData.length} messages`);
       
-      const formattedMessages = messagesData.map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        senderId: msg.sender_id,
-        senderName: msg.profiles?.name ?? 'Unknown User',
-        senderAvatar: msg.profiles?.avatar ?? '',
-        groupId: msg.group_id,
-        timestamp: new Date(msg.created_at),
-        read: msg.read,
-        reply_to_id: msg.reply_to_id
-      }));
+      // Create a map of profiles for quick lookup
+      const profilesMap = new Map();
+      if (profilesData) {
+        profilesData.forEach(profile => {
+          profilesMap.set(profile.id, profile);
+        });
+      }
+      
+      const formattedMessages = messagesData.map(msg => {
+        const profile = profilesMap.get(msg.sender_id);
+        return {
+          id: msg.id,
+          content: msg.content,
+          senderId: msg.sender_id,
+          senderName: profile?.name ?? 'Unknown User',
+          senderAvatar: profile?.avatar ?? '',
+          groupId: msg.group_id,
+          timestamp: new Date(msg.created_at),
+          read: msg.read,
+          reply_to_id: msg.reply_to_id
+        };
+      });
       
       setChatMessages(formattedMessages);
       setIsLoadingMessages(false);
@@ -176,15 +189,7 @@ export const useChatMessages = (activeConversation: string, currentUserId?: stri
           group_id: activeConversation,
           reply_to_id: replyToId || null
         })
-        .select(`
-          id,
-          content,
-          sender_id,
-          group_id,
-          created_at,
-          read,
-          reply_to_id
-        `)
+        .select('*')
         .single();
       
       if (messageError) {
